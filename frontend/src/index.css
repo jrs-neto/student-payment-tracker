@@ -1,0 +1,30 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --bg-main: #f9fafb;
+    --bg-surface: #ffffff;
+    --border-color: #e5e7eb;
+    --text-main: #111827;
+    --text-muted: #4b5563;
+    --color-primary: #2563eb;
+    --color-primary-hover: #1d4ed8;
+  }
+
+  html.dark {
+    --bg-main: #100B1A;
+    --bg-surface: #1B1428;
+    --border-color: #38264F;
+    --text-main: #F3F4F6;
+    --text-muted: #9CA3AF;
+    --color-primary: #8B5CF6;
+    --color-primary-hover: #7C3AED;
+  }
+
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+}

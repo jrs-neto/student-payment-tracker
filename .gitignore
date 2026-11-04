@@ -1,0 +1,44 @@
+# Ambientes e Segredos (Environment Variables)
+.env
+.env.*
+*.env
+*.local
+!.env.example
+!**/.env.example
+
+# Dependências (Dependencies)
+node_modules/
+
+# Builds e Distribuição (Build outputs)
+dist/
+dist-ssr/
+build/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Arquivos temporários do Sistema Operacional (OS files)
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+
+# Editores e IDEs (Editor directories and files)
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
