@@ -1,5 +1,5 @@
 export const errorHandler = (err, req, res, next) => {
-  // Tratamento específico para JSON inválido enviado pelo cliente (SyntaxError do body-parser)
+  // Tratamento específico para JSON inválido enviado pelo cliente
   if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
     return res.status(400).json({
       error: {
@@ -9,20 +9,41 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Extrai o código de status bruto do erro
-  let statusCode = err.status || err.statusCode || 500;
+  // Extrai o código de status do erro
+  let statusCode = Number(err.status ?? err.statusCode ?? err.response?.status);
 
-  // Validação estrita: garante que o código HTTP seja um número válido entre 400 e 599.
-  // Caso contrário, normaliza para 500 (Erro Interno do Servidor).
-  if (typeof statusCode !== "number" || statusCode < 400 || statusCode > 599) {
+  // Garante um código HTTP válido entre 400 e 599
+  if (!Number.isInteger(statusCode) || statusCode < 400 || statusCode > 599) {
     statusCode = 500;
   }
 
-  // Resposta simplificada e genérica para todos os demais erros
-  res.status(statusCode).json({
+  // Utiliza mensagens controladas para erros conhecidos
+  const safeMessages = {
+    429: "Você atingiu o limite de requisições. Aguarde antes de tentar novamente.",
+    502: "Não foi possível estabelecer comunicação com o serviço de IA.",
+    503: "O serviço de IA está temporariamente indisponível. Tente novamente em instantes.",
+    504: "O serviço de IA demorou demais para responder. Tente novamente.",
+  };
+
+  let message;
+
+  // Erros 4xx são expostos somente se estiverem explicitamente marcados como seguros
+  if (
+    statusCode >= 400 &&
+    statusCode < 500 &&
+    err.isSafe === true &&
+    typeof err.message === "string" &&
+    err.message.trim()
+  ) {
+    message = err.message.trim();
+  } else {
+    message = safeMessages[statusCode] || "Ocorreu um erro ao processar a requisição.";
+  }
+
+  return res.status(statusCode).json({
     error: {
       status: statusCode,
-      message: "Ocorreu um erro ao processar a requisição.",
+      message,
     },
   });
 };

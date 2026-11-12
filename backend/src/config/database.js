@@ -18,6 +18,11 @@ const poolConfig = process.env.DATABASE_URL
 
 const pool = new Pool(poolConfig);
 
+// Tratamento de erros inesperados em clientes inativos do pool para evitar encerramento do processo
+pool.on("error", (err) => {
+  console.error("Erro inesperado em cliente inativo do pool PostgreSQL:", err);
+});
+
 // Teste rápido de conexão ao iniciar
 pool.query("SELECT NOW()", (err, res) => {
   if (err) {

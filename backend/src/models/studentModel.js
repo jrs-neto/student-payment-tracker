@@ -64,4 +64,14 @@ export const studentModel = {
     const result = await pool.query(query, values);
     return result.rows[0] || null;
   },
+
+  async countAll() {
+    const query = `
+    SELECT COUNT(*) AS total
+    FROM students;
+  `;
+
+    const result = await pool.query(query);
+    return Number(result.rows[0].total);
+  },
 };

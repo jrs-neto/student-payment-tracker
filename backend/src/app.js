@@ -5,8 +5,11 @@ import studentRoutes from "./routes/studentRoutes.js";
 import monthlyRoutes from "./routes/monthlyRoutes.js";
 import { notFoundHandler } from "./middlewares/notFoundHandler.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
+import assistantRoutes from "./routes/assistantRoutes.js";
 
 const app = express();
+
+app.set("trust proxy", 1);
 
 const allowedOrigins = ["http://localhost:5173"];
 
@@ -23,7 +26,7 @@ app.use(
     origin: allowedOrigins,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  })
+  }),
 );
 
 // Middleware para interpretar JSON
@@ -34,9 +37,10 @@ app.get("/", (req, res) => {
   res.json({ message: "API do Sistema de Mensalidades rodando com sucesso!" });
 });
 
-// Registro das rotas de alunos e mensalidades
+// Registro das rotas de alunos, mensalidades e assistente
 app.use("/api/students", studentRoutes);
 app.use("/api", monthlyRoutes);
+app.use("/api/assistant", assistantRoutes);
 
 // Middleware para rotas inexistentes (404)
 app.use(notFoundHandler);
