@@ -139,7 +139,9 @@ export default function AlunosPage() {
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-[#38264F]">
                   <thead className="bg-gray-50 dark:bg-[#151021]">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nome</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Nº / Nome
+                      </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Responsável</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">E-mail do Responsável</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Situação</th>
@@ -154,9 +156,12 @@ export default function AlunosPage() {
                         </td>
                       </tr>
                     ) : (
-                      activeAlunos.map((aluno) => (
+                      activeAlunos.map((aluno, index) => (
                         <tr key={aluno.id} className="hover:bg-gray-50 dark:hover:bg-[#231935] transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                            <span className="inline-block w-8 text-gray-400 dark:text-gray-500 font-normal">
+                              {index + 1}.
+                            </span>
                             {aluno.name}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
