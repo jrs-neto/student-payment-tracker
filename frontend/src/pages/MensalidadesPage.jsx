@@ -14,7 +14,8 @@ import {
   FileText,
   Edit3,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Search
 } from 'lucide-react';
 import api from '../services/api';
 
@@ -42,6 +43,7 @@ export default function MensalidadesPage() {
   const [expandedYear, setExpandedYear] = useState(null);
 
   const [records, setRecords] = useState([]);
+  const [studentSearch, setStudentSearch] = useState('');
   const [loadingRecords, setLoadingRecords] = useState(false);
   const [errorRecords, setErrorRecords] = useState(null);
 
@@ -100,6 +102,16 @@ export default function MensalidadesPage() {
       month: '2-digit',
       day: '2-digit'
     }).format(new Date())
+  );
+
+  const normalizeText = (value) =>
+    String(value ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLocaleLowerCase('pt-BR');
+
+  const filteredRecords = records.filter((record) =>
+    normalizeText(record.student_name).includes(normalizeText(studentSearch))
   );
 
   useEffect(() => {
@@ -235,7 +247,15 @@ export default function MensalidadesPage() {
         setLoadingStudents(true);
         const response = await api.get('/students');
         const data = Array.isArray(response.data) ? response.data : [];
-        setActiveStudents(data.filter((student) => student.is_active === true));
+        const sortedStudents = data
+          .filter((student) => student.is_active === true)
+          .sort((a, b) =>
+            (a.name || '').localeCompare(b.name || '', 'pt-BR', {
+              sensitivity: 'base'
+            })
+          );
+
+        setActiveStudents(sortedStudents);
       } catch (err) {
         console.error('Erro ao buscar alunos:', err);
         setActiveStudents([]);
@@ -830,8 +850,8 @@ export default function MensalidadesPage() {
                                 }
                               }}
                               className={`rounded-lg shadow-sm p-4 border-2 cursor-pointer transition focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6] ${isSelected
-                                  ? 'bg-blue-50/50 dark:bg-[#8B5CF6]/10 border-blue-600 dark:border-[#8B5CF6] ring-2 ring-blue-100 dark:ring-[#8B5CF6]/20'
-                                  : 'bg-[var(--bg-main)] border-[var(--border-color)] hover:border-gray-300 dark:hover:border-gray-700'
+                                ? 'bg-blue-50/50 dark:bg-[#8B5CF6]/10 border-blue-600 dark:border-[#8B5CF6] ring-2 ring-blue-100 dark:ring-[#8B5CF6]/20'
+                                : 'bg-[var(--bg-main)] border-[var(--border-color)] hover:border-gray-300 dark:hover:border-gray-700'
                                 }`}
                             >
                               <div className="flex justify-between items-center mb-1">
@@ -1102,6 +1122,22 @@ export default function MensalidadesPage() {
               </div>
             )}
 
+            {!loadingRecords && !errorRecords && records.length > 0 && (
+              <div className="mb-4 max-w-md relative">
+                <Search
+                  size={18}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  type="text"
+                  value={studentSearch}
+                  onChange={(e) => setStudentSearch(e.target.value)}
+                  placeholder="Pesquisar aluno..."
+                  className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-main)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6]"
+                />
+              </div>
+            )}
+
             {loadingRecords && (
               <div className="text-center py-12">
                 <p className="text-gray-500 dark:text-gray-400 text-sm">A carregar registros de mensalidades...</p>
@@ -1133,7 +1169,7 @@ export default function MensalidadesPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-[var(--bg-surface)] divide-y divide-gray-200 dark:divide-[#38264F]">
-                    {records.map((record, index) => {
+                    {filteredRecords.length > 0 ? filteredRecords.map((record, index) => {
                       const isRowUpdating = updatingRecordId === record.id;
                       const isAnyUpdating = updatingRecordId !== null;
                       const isPaid = Boolean(record.is_paid);
@@ -1213,7 +1249,13 @@ export default function MensalidadesPage() {
                           </td>
                         </tr>
                       );
-                    })}
+                    }) : (
+                      <tr>
+                        <td colSpan="5" className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                          Nenhum aluno encontrado para essa pesquisa.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
