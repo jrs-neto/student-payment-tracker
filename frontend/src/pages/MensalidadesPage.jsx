@@ -666,32 +666,11 @@ export default function MensalidadesPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-main)] p-6 transition-colors duration-200">
-      <div className="max-w-6xl mx-auto">
-        {/* Cabeçalho */}
-        <header className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <CreditCard className="text-blue-600 dark:text-[#8B5CF6]" size={28} />
-              Controle de Mensalidades
-            </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Selecione um mês de referência para gerir os pagamentos</p>
-          </div>
-          <button
-            onClick={() => {
-              setShowCopyModal(true);
-              setCopyError(null);
-              if (selectedMonth) setCopySourceId(String(selectedMonth.id));
-            }}
-            className="flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED] text-white text-sm font-semibold px-4 py-2 rounded-lg transition shadow-sm self-start md:self-auto"
-          >
-            <Copy size={16} />
-            Criar próximo mês
-          </button>
-        </header>
+      <div className="max-w-[1500px] mx-auto">
 
         {/* Modal / Bloco de Cópia de Mês */}
         {showCopyModal && (
-          <div className="mb-8 p-5 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-lg shadow-md">
+          <div className="mb-8 p-5 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-lg shadow-md max-w-3xl mx-auto relative z-10">
             <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
               <Copy size={18} className="text-blue-600 dark:text-[#8B5CF6]" />
               Criar Próximo Mês (Copiar Registros)
@@ -765,8 +744,7 @@ export default function MensalidadesPage() {
                 type="button"
                 onClick={handleCopyMonth}
                 disabled={isCopying}
-                className={`px-4 py-2 bg-emerald-600 cursor-pointer hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition ${isCopying ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                className={`px-4 py-2 bg-emerald-600 cursor-pointer hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition ${isCopying ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {isCopying ? 'A criar...' : 'Confirmar Cópia'}
               </button>
@@ -792,521 +770,540 @@ export default function MensalidadesPage() {
           </div>
         )}
 
-        {!loadingMonths && !errorMonths && months.length > 0 && (() => {
-          // Agrupa os meses por ano
-          const groupedMonths = months.reduce((acc, month) => {
-            const year = month.year;
-            if (!acc[year]) {
-              acc[year] = [];
-            }
-            acc[year].push(month);
-            return acc;
-          }, {});
+        {/* CONTAINER MESTRE-DETALHE: SIDEBAR À ESQUERDA + CONTEÚDO PRINCIPAL À DIREITA */}
+        {!loadingMonths && !errorMonths && months.length > 0 && (
+          <div className="flex flex-col lg:flex-row gap-6 items-start">
 
-          // Ordena os anos em ordem decrescente (ex: 2027, 2026...)
-          const sortedYears = Object.keys(groupedMonths).sort((a, b) => Number(b) - Number(a));
+            {/* SIDEBAR DE REFERÊNCIAS (COLUNA ESQUERDA COM LABEL ALINHADA AO PADING DOS ANOS) */}
+            <div className="w-full lg:w-72 shrink-0 space-y-3 mt-4">
+              <div className="flex items-center gap-2.5 px-3.5 py-2 mb-1">
+                <Calendar size={18} className="text-blue-600 dark:text-[#8B5CF6]" />
+                <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">Referências</h2>
+              </div>
 
-          return (
-            <div className="space-y-4 mb-8">
-              {sortedYears.map((year) => {
-                const isExpanded = expandedYear === year;
-                const yearMonths = groupedMonths[year].sort((a, b) => Number(a.month) - Number(b.month));
+              {(() => {
+                const groupedMonths = months.reduce((acc, month) => {
+                  const year = month.year;
+                  if (!acc[year]) {
+                    acc[year] = [];
+                  }
+                  acc[year].push(month);
+                  return acc;
+                }, {});
 
-                return (
-                  <div key={year} className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-lg shadow-sm overflow-hidden transition">
-                    {/* Cabeçalho do Ano (Accordion Clicável) */}
-                    <button
-                      type="button"
-                      onClick={() => handleToggleYear(year)}
-                      className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-[#151021] hover:bg-gray-100 dark:hover:bg-[#1e1530] transition text-left focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6]"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Calendar size={20} className="text-blue-600 dark:text-[#8B5CF6]" />
-                        <span className="text-lg font-bold text-gray-900 dark:text-gray-100">Ano {year}</span>
-                        <span className="text-xs font-semibold bg-blue-100 dark:bg-[#8B5CF6]/20 text-blue-800 dark:text-[#8B5CF6] px-2.5 py-0.5 rounded-full">
-                          {yearMonths.length} {yearMonths.length === 1 ? 'mês' : 'meses'}
-                        </span>
-                      </div>
-                      <div className="text-gray-500 dark:text-gray-400">
-                        {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                      </div>
-                    </button>
+                const sortedYears = Object.keys(groupedMonths).sort((a, b) => Number(b) - Number(a));
 
-                    {/* Conteúdo Expansível do Ano (Meses) */}
-                    {isExpanded && (
-                      <div className="p-4 border-t border-[var(--border-color)] grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {yearMonths.map((month) => {
-                          const isSelected = selectedMonth?.id === month.id;
-                          return (
-                            <div
-                              key={month.id}
-                              role="button"
-                              tabIndex={0}
-                              onClick={() => handleSelectMonth(month)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  e.preventDefault();
-                                  handleSelectMonth(month);
-                                }
-                              }}
-                              className={`rounded-lg shadow-sm p-4 border-2 cursor-pointer transition focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6] ${isSelected
-                                ? 'bg-blue-50/50 dark:bg-[#8B5CF6]/10 border-blue-600 dark:border-[#8B5CF6] ring-2 ring-blue-100 dark:ring-[#8B5CF6]/20'
-                                : 'bg-[var(--bg-main)] border-[var(--border-color)] hover:border-gray-300 dark:hover:border-gray-700'
-                                }`}
-                            >
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-xs font-semibold text-blue-600 dark:text-[#8B5CF6] uppercase tracking-wide">
-                                  Referência
-                                </span>
+                return sortedYears.map((year) => {
+                  const isExpanded = expandedYear === year;
+                  const yearMonths = groupedMonths[year].sort((a, b) => Number(a.month) - Number(b.month));
+
+                  return (
+                    <div key={year} className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-lg shadow-sm overflow-hidden transition">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleYear(year)}
+                        className="w-full flex items-center justify-between p-3.5 bg-gray-50 dark:bg-[#151021] hover:bg-gray-100 dark:hover:bg-[#1e1530] transition text-left focus:outline-none"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Calendar size={18} className="text-blue-600 dark:text-[#8B5CF6]" />
+                          <span className="text-sm font-bold text-gray-900 dark:text-gray-100">Ano {year}</span>
+                          <span className="text-[11px] font-semibold bg-blue-100 dark:bg-[#8B5CF6]/20 text-blue-800 dark:text-[#8B5CF6] px-2 py-0.5 rounded-full">
+                            {yearMonths.length} {yearMonths.length === 1 ? 'mês' : 'meses'}
+                          </span>
+                        </div>
+                        <div className="text-gray-500 dark:text-gray-400">
+                          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </div>
+                      </button>
+
+                      {isExpanded && (
+                        <div className="p-2 border-t border-[var(--border-color)] space-y-1.5 bg-[var(--bg-main)]/40">
+                          {yearMonths.map((month) => {
+                            const isSelected = selectedMonth?.id === month.id;
+                            return (
+                              <button
+                                key={month.id}
+                                type="button"
+                                onClick={() => handleSelectMonth(month)}
+                                className={`w-full text-left px-3 py-2.5 rounded-md transition flex items-center justify-between cursor-pointer ${isSelected
+                                    ? 'bg-blue-600 dark:bg-[#8B5CF6] text-white font-semibold shadow-sm'
+                                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1e1530]'
+                                  }`}
+                              >
+                                <span className="text-sm">{nomesMeses[month.month] || `Mês ${month.month}`}</span>
                                 {isSelected && (
-                                  <span className="bg-blue-600 dark:bg-[#8B5CF6] text-white text-xs font-semibold px-2 py-0.5 rounded-full">
-                                    Selecionado
+                                  <span className="text-[10px] uppercase tracking-wider bg-white/20 px-1.5 py-0.5 rounded text-white">
+                                    Ativo
                                   </span>
                                 )}
-                              </div>
-                              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                                {nomesMeses[month.month] || `Mês ${month.month}`}
-                              </h3>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                Clique para visualizar registros.
-                              </p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })()}
-
-        {/* Seção de Registros / Tabela de Mensalidades do Mês Selecionado */}
-        {selectedMonth && (
-          <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-md rounded-lg overflow-hidden p-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                <FileText className="text-blue-600 dark:text-[#8B5CF6]" size={22} />
-                Mensalidades de {nomesMeses[selectedMonth.month]} de {selectedMonth.year}
-              </h2>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setIsDeleteMonthModalOpen(true)}
-                  disabled={isDeletingMonth}
-                  className="flex items-center gap-1.5 cursor-pointer bg-red-50 dark:bg-red-950/50 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg text-sm font-semibold transition shadow-sm border border-red-200 dark:border-red-900"
-                  title="Excluir mês selecionado"
-                >
-                  <Trash2 size={16} />
-                  <span>Excluir mês</span>
-                </button>
-                <button
-                  onClick={() => setShowAddModal(true)}
-                  className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED] text-white text-sm font-semibold px-4 py-2 rounded-lg transition shadow-sm"
-                >
-                  <Plus size={16} />
-                  Adicionar mensalidade
-                </button>
-              </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                });
+              })()}
             </div>
 
-            {/* Modal de Confirmação de Exclusão do Mês */}
-            {isDeleteMonthModalOpen && (
-              <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-                <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-lg max-w-md w-full p-6 shadow-xl">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">Confirmar Exclusão do Mês</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
-                    Tem certeza de que deseja excluir o mês de referência de <strong>{nomesMeses[selectedMonth.month]} de {selectedMonth.year}</strong> e <strong>todas as mensalidades vinculadas a ele</strong>? Esta ação é irreversível.
-                  </p>
-                  <div className="flex justify-end gap-3">
-                    <button
-                      onClick={() => setIsDeleteMonthModalOpen(false)}
-                      disabled={isDeletingMonth}
-                      className="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium transition"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={handleDeleteMonth}
-                      disabled={isDeletingMonth}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition flex items-center gap-2"
-                    >
-                      {isDeletingMonth ? 'A excluir...' : 'Confirmar Exclusão'}
-                    </button>
-                  </div>
+            {/* CONTEÚDO PRINCIPAL (COLUNA DIREITA: CABEÇALHO CENTRALIZADO, TABELA E CARDS) */}
+            <div className="flex-1 min-w-0 w-full space-y-6">
+
+              {/* Cabeçalho Principal Centralizado */}
+              <header className="flex flex-col md:flex-row md:items-center md:justify-center relative gap-4 py-2">
+                <div className="text-center">
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center justify-center gap-2">
+                    <CreditCard className="text-blue-600 dark:text-[#8B5CF6]" size={28} />
+                    Controle de Mensalidades
+                  </h1>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Selecione um mês de referência para gerir os pagamentos</p>
                 </div>
-              </div>
-            )}
-
-            {/* Formulário de cadastro de mensalidade */}
-            {showAddModal && (
-              <div className="mb-6 p-4 bg-[var(--bg-main)] rounded-lg border border-[var(--border-color)] shadow-inner">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
-                  <Plus size={18} className="text-blue-600 dark:text-[#8B5CF6]" />
-                  Nova Mensalidade
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Aluno Ativo</label>
-                    <select
-                      value={newStudentId}
-                      onChange={(e) => setNewStudentId(e.target.value)}
-                      disabled={loadingStudents}
-                      className="w-full bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6]"
-                    >
-                      <option value="">{loadingStudents ? 'Carregando alunos...' : 'Selecione um aluno...'}</option>
-                      {activeStudents.map((student) => (
-                        <option key={student.id} value={student.id}>
-                          {student.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Valor (R$)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={newAmount}
-                      onChange={(e) => setNewAmount(e.target.value)}
-                      className="w-full bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Dia do vencimento</label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="31"
-                      placeholder="Ex: 10"
-                      value={newDueDate}
-                      onChange={(e) => setNewDueDate(e.target.value)}
-                      className="w-full bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6]"
-                    />
-                  </div>
-                </div>
-
-                {formError && (
-                  <div className="bg-red-100 dark:bg-red-950/60 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 px-3 py-2 rounded-lg mb-4 text-xs flex items-center gap-2" role="alert">
-                    <AlertCircle size={14} />
-                    <span>{formError}</span>
-                  </div>
-                )}
-
-                <div className="flex justify-end space-x-2">
+                <div className="md:absolute md:right-0">
                   <button
-                    type="button"
                     onClick={() => {
-                      setShowAddModal(false);
-                      setFormError(null);
-                      setNewStudentId('');
-                      setNewAmount('');
-                      setNewDueDate('');
+                      setShowCopyModal(true);
+                      setCopyError(null);
+                      if (selectedMonth) setCopySourceId(String(selectedMonth.id));
                     }}
-                    disabled={isSaving}
-                    className="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg transition"
+                    className="flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED] text-white text-sm font-semibold px-4 py-2 rounded-lg transition shadow-sm w-full md:w-auto justify-center"
                   >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleAddRecord}
-                    disabled={isSaving}
-                    className={`px-4 py-2 bg-blue-600 cursor-pointer hover:bg-blue-700 dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED] text-white text-sm font-semibold rounded-lg transition ${isSaving ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                  >
-                    {isSaving ? 'A salvar...' : 'Salvar'}
+                    <Copy size={16} />
+                    Criar próximo mês
                   </button>
                 </div>
-              </div>
-            )}
+              </header>
 
-            {/* Modal de Edição de Mensalidade */}
-            {showEditModal && (
-              <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-                <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-lg max-w-lg w-full p-6 shadow-xl">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                    <Edit3 size={18} className="text-blue-600 cursor-pointer dark:text-[#8B5CF6]" />
-                    Editar Mensalidade - {recordToEdit?.student_name}
-                  </h3>
-
-                  <div className="space-y-4 mb-4">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nome do Aluno (Somente leitura)</label>
-                      <input
-                        type="text"
-                        disabled
-                        value={recordToEdit?.student_name || ''}
-                        className="w-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-[var(--border-color)] rounded-lg p-2.5 text-sm cursor-not-allowed"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Valor (R$)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        value={editAmount}
-                        onChange={(e) => setEditAmount(e.target.value)}
-                        className="w-full bg-[var(--bg-main)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Dia do vencimento ({nomesMeses[selectedMonth.month]} de {selectedMonth.year})
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="31"
-                        placeholder="Ex: 15"
-                        value={editDueDate}
-                        onChange={(e) => setEditDueDate(e.target.value)}
-                        className="w-full bg-[var(--bg-main)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6]"
-                      />
+              {selectedMonth && (
+                <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-md rounded-lg overflow-hidden p-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                      <FileText className="text-blue-600 dark:text-[#8B5CF6]" size={22} />
+                      Mensalidades de {nomesMeses[selectedMonth.month]} de {selectedMonth.year}
+                    </h2>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setIsDeleteMonthModalOpen(true)}
+                        disabled={isDeletingMonth}
+                        className="flex items-center gap-1.5 cursor-pointer bg-red-50 dark:bg-red-950/50 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg text-sm font-semibold transition shadow-sm border border-red-200 dark:border-red-900"
+                        title="Excluir mês selecionado"
+                      >
+                        <Trash2 size={16} />
+                        <span>Excluir mês</span>
+                      </button>
+                      <button
+                        onClick={() => setShowAddModal(true)}
+                        className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED] text-white text-sm font-semibold px-4 py-2 rounded-lg transition shadow-sm"
+                      >
+                        <Plus size={16} />
+                        Adicionar mensalidade
+                      </button>
                     </div>
                   </div>
 
-                  {editFormError && (
-                    <div className="bg-red-100 dark:bg-red-950/60 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 px-3 py-2 rounded-lg mb-4 text-xs flex items-center gap-2" role="alert">
-                      <AlertCircle size={14} />
-                      <span>{editFormError}</span>
+                  {/* Modal de Confirmação de Exclusão do Mês */}
+                  {isDeleteMonthModalOpen && (
+                    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+                      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-lg max-w-md w-full p-6 shadow-xl">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">Confirmar Exclusão do Mês</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
+                          Tem certeza de que deseja excluir o mês de referência de <strong>{nomesMeses[selectedMonth.month]} de {selectedMonth.year}</strong> e <strong>todas as mensalidades vinculadas a ele</strong>? Esta ação é irreversível.
+                        </p>
+                        <div className="flex justify-end gap-3">
+                          <button
+                            onClick={() => setIsDeleteMonthModalOpen(false)}
+                            disabled={isDeletingMonth}
+                            className="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium transition"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            onClick={handleDeleteMonth}
+                            disabled={isDeletingMonth}
+                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition flex items-center gap-2"
+                          >
+                            {isDeletingMonth ? 'A excluir...' : 'Confirmar Exclusão'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   )}
 
-                  <div className="flex justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowEditModal(false);
-                        setRecordToEdit(null);
-                        setEditAmount('');
-                        setEditDueDate('');
-                        setEditFormError(null);
-                      }}
-                      disabled={isUpdatingRecord}
-                      className="px-4 py-2 bg-gray-200 cursor-pointer dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium transition"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleUpdateRecord}
-                      disabled={isUpdatingRecord}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 cursor-pointer dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED] text-white rounded-lg text-sm font-semibold transition shadow-sm disabled:opacity-50"
-                    >
-                      {isUpdatingRecord ? 'A guardar...' : 'Salvar Alterações'}
-                    </button>
-                  </div>
+                  {/* Formulário de cadastro de mensalidade */}
+                  {showAddModal && (
+                    <div className="mb-6 p-4 bg-[var(--bg-main)] rounded-lg border border-[var(--border-color)] shadow-inner">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                        <Plus size={18} className="text-blue-600 dark:text-[#8B5CF6]" />
+                        Nova Mensalidade
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Aluno Ativo</label>
+                          <select
+                            value={newStudentId}
+                            onChange={(e) => setNewStudentId(e.target.value)}
+                            disabled={loadingStudents}
+                            className="w-full bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6]"
+                          >
+                            <option value="">{loadingStudents ? 'Carregando alunos...' : 'Selecione um aluno...'}</option>
+                            {activeStudents.map((student) => (
+                              <option key={student.id} value={student.id}>
+                                {student.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Valor (R$)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={newAmount}
+                            onChange={(e) => setNewAmount(e.target.value)}
+                            className="w-full bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Dia do vencimento</label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="31"
+                            placeholder="Ex: 10"
+                            value={newDueDate}
+                            onChange={(e) => setNewDueDate(e.target.value)}
+                            className="w-full bg-[var(--bg-surface)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6]"
+                          />
+                        </div>
+                      </div>
+
+                      {formError && (
+                        <div className="bg-red-100 dark:bg-red-950/60 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 px-3 py-2 rounded-lg mb-4 text-xs flex items-center gap-2" role="alert">
+                          <AlertCircle size={14} />
+                          <span>{formError}</span>
+                        </div>
+                      )}
+
+                      <div className="flex justify-end space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAddModal(false);
+                            setFormError(null);
+                            setNewStudentId('');
+                            setNewAmount('');
+                            setNewDueDate('');
+                          }}
+                          disabled={isSaving}
+                          className="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg transition"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleAddRecord}
+                          disabled={isSaving}
+                          className={`px-4 py-2 bg-blue-600 cursor-pointer hover:bg-blue-700 dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED] text-white text-sm font-semibold rounded-lg transition ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          {isSaving ? 'A salvar...' : 'Salvar'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Modal de Edição de Mensalidade */}
+                  {showEditModal && (
+                    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+                      <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-lg max-w-lg w-full p-6 shadow-xl">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                          <Edit3 size={18} className="text-blue-600 cursor-pointer dark:text-[#8B5CF6]" />
+                          Editar Mensalidade - {recordToEdit?.student_name}
+                        </h3>
+
+                        <div className="space-y-4 mb-4">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nome do Aluno (Somente leitura)</label>
+                            <input
+                              type="text"
+                              disabled
+                              value={recordToEdit?.student_name || ''}
+                              className="w-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-[var(--border-color)] rounded-lg p-2.5 text-sm cursor-not-allowed"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Valor (R$)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              placeholder="0.00"
+                              value={editAmount}
+                              onChange={(e) => setEditAmount(e.target.value)}
+                              className="w-full bg-[var(--bg-main)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6]"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Dia do vencimento ({nomesMeses[selectedMonth.month]} de {selectedMonth.year})
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              max="31"
+                              placeholder="Ex: 15"
+                              value={editDueDate}
+                              onChange={(e) => setEditDueDate(e.target.value)}
+                              className="w-full bg-[var(--bg-main)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6]"
+                            />
+                          </div>
+                        </div>
+
+                        {editFormError && (
+                          <div className="bg-red-100 dark:bg-red-950/60 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 px-3 py-2 rounded-lg mb-4 text-xs flex items-center gap-2" role="alert">
+                            <AlertCircle size={14} />
+                            <span>{editFormError}</span>
+                          </div>
+                        )}
+
+                        <div className="flex justify-end gap-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowEditModal(false);
+                              setRecordToEdit(null);
+                              setEditAmount('');
+                              setEditDueDate('');
+                              setEditFormError(null);
+                            }}
+                            disabled={isUpdatingRecord}
+                            className="px-4 py-2 bg-gray-200 cursor-pointer dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium transition"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleUpdateRecord}
+                            disabled={isUpdatingRecord}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 cursor-pointer dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED] text-white rounded-lg text-sm font-semibold transition shadow-sm disabled:opacity-50"
+                          >
+                            {isUpdatingRecord ? 'A guardar...' : 'Salvar Alterações'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Mensagens de feedback globais da ação */}
+                  {actionMessage && (
+                    <div className="bg-green-100 dark:bg-green-950/60 border border-green-400 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded-lg mb-4 text-sm shadow-sm flex items-center gap-2" role="alert">
+                      <CheckCircle2 size={16} />
+                      <span className="block sm:inline">{actionMessage}</span>
+                    </div>
+                  )}
+
+                  {actionError && (
+                    <div className="bg-red-100 dark:bg-red-950/60 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg mb-4 text-sm shadow-sm flex items-center gap-2" role="alert">
+                      <AlertCircle size={16} />
+                      <span className="block sm:inline">{actionError}</span>
+                    </div>
+                  )}
+
+                  {!loadingRecords && !errorRecords && records.length > 0 && (
+                    <div className="mb-4 max-w-md relative">
+                      <Search
+                        size={18}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      />
+                      <input
+                        type="text"
+                        value={studentSearch}
+                        onChange={(e) => setStudentSearch(e.target.value)}
+                        placeholder="Pesquisar aluno..."
+                        className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-main)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6]"
+                      />
+                    </div>
+                  )}
+
+                  {loadingRecords && (
+                    <div className="text-center py-12">
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">A carregar registros de mensalidades...</p>
+                    </div>
+                  )}
+
+                  {errorRecords && (
+                    <div className="bg-red-100 dark:bg-red-950/60 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg mb-4 text-sm shadow-sm" role="alert">
+                      <span className="block sm:inline">{errorRecords}</span>
+                    </div>
+                  )}
+
+                  {!loadingRecords && !errorRecords && records.length === 0 && (
+                    <div className="text-center py-8 bg-[var(--bg-main)] rounded-lg border border-dashed border-[var(--border-color)]">
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">Nenhum registro de mensalidade encontrado para este mês.</p>
+                    </div>
+                  )}
+
+                  {!loadingRecords && !errorRecords && records.length > 0 && (
+                    <div className="overflow-x-auto border border-[var(--border-color)] rounded-lg mb-6">
+                      <table className="min-w-full divide-y divide-gray-200 dark:divide-[#38264F]">
+                        <thead className="bg-gray-50 dark:bg-[#151021]">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nome do Aluno</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Valor</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Data de Vencimento</th>
+                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Situação</th>
+                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-[var(--bg-surface)] divide-y divide-gray-200 dark:divide-[#38264F]">
+                          {filteredRecords.length > 0 ? filteredRecords.map((record, index) => {
+                            const isRowUpdating = updatingRecordId === record.id;
+                            const isAnyUpdating = updatingRecordId !== null;
+                            const isPaid = Boolean(record.is_paid);
+
+                            const isPaymentUpdating = isRowUpdating && updatingActionType === 'payment';
+                            const isDeleteUpdating = isRowUpdating && updatingActionType === 'delete';
+
+                            return (
+                              <tr key={record.id || index} className="hover:bg-gray-50 dark:hover:bg-[#231935] transition-colors">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                                  {record.student_name}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                                  {formatCurrency(record.amount)}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                                  {formatDate(record.due_date)}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                  <span className={`px-3 py-1 inline-flex items-center justify-center w-32 text-xs leading-5 font-semibold rounded-full ${getStatusBadgeStyle(record.status)}`}>
+                                    {record.status}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                  <div className="flex items-center justify-center gap-2">
+                                    {/* Botão de Edição */}
+                                    <button
+                                      onClick={() => {
+                                        setRecordToEdit(record);
+                                        setEditAmount(record.amount);
+                                        const dayPart = record.due_date ? record.due_date.split('-')[2] : '';
+                                        setEditDueDate(dayPart ? String(Number(dayPart)) : '');
+                                        setEditFormError(null);
+                                        setShowEditModal(true);
+                                      }}
+                                      disabled={isAnyUpdating}
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800 transition"
+                                      title="Editar mensalidade"
+                                    >
+                                      <Edit3 size={13} />
+                                      Editar
+                                    </button>
+
+                                    {/* Botão de Alternar Pagamento */}
+                                    <button
+                                      onClick={() => handleTogglePayment(record)}
+                                      disabled={isAnyUpdating}
+                                      className={`inline-flex items-center justify-center gap-1 cursor-pointer px-3 py-1.5 rounded-md text-xs font-semibold transition w-44 ${isPaid
+                                          ? 'bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 border border-yellow-200 dark:border-yellow-800'
+                                          : 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/50 border border-green-200 dark:border-green-800'
+                                        } ${isAnyUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    >
+                                      {isPaymentUpdating ? (
+                                        'A atualizar...'
+                                      ) : isPaid ? (
+                                        <>
+                                          <X size={13} />
+                                          Marcar como pendente
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Check size={13} />
+                                          Marcar como pago
+                                        </>
+                                      )}
+                                    </button>
+
+                                    {/* Botão de Exclusão */}
+                                    <button
+                                      onClick={() => handleDeleteRecord(record)}
+                                      disabled={isAnyUpdating}
+                                      className={`inline-flex items-center gap-1 cursor-pointer px-3 py-1.5 rounded-md text-xs font-semibold bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50 border border-red-200 dark:border-red-900 transition ${isAnyUpdating ? 'opacity-50 cursor-not-allowed' : ''
+                                        }`}
+                                    >
+                                      <Trash2 size={13} />
+                                      {isDeleteUpdating ? 'A excluir...' : 'Excluir'}
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          }) : (
+                            <tr>
+                              <td colSpan="5" className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                                Nenhum aluno encontrado para essa pesquisa.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* Cards de Resumo Financeiro */}
+                  {!loadingRecords && !errorRecords && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                      {/* Total Previsto */}
+                      <div className="bg-[var(--bg-main)] border border-[var(--border-color)] rounded-lg shadow-sm p-4 flex flex-col justify-between">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                            Total previsto
+                          </span>
+                          <DollarSign className="text-blue-600 dark:text-[#8B5CF6]" size={20} />
+                        </div>
+                        <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                          {formatCurrency(summary.total_expected)}
+                        </span>
+                      </div>
+
+                      {/* Total Recebido */}
+                      <div className="bg-[var(--bg-main)] border border-[var(--border-color)] rounded-lg shadow-sm p-4 flex flex-col justify-between">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wide">
+                            Total recebido
+                          </span>
+                          <CheckCircle2 className="text-green-600 dark:text-green-400" size={20} />
+                        </div>
+                        <span className="text-2xl font-bold text-green-700 dark:text-green-300">
+                          {formatCurrency(summary.total_paid)}
+                        </span>
+                      </div>
+
+                      {/* Total Pendente */}
+                      <div className="bg-[var(--bg-main)] border border-[var(--border-color)] rounded-lg shadow-sm p-4 flex flex-col justify-between">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide">
+                            Total pendente
+                          </span>
+                          <Clock className="text-amber-600 dark:text-amber-400" size5={20} />
+                        </div>
+                        <span className="text-2xl font-bold text-amber-700 dark:text-amber-300">
+                          {formatCurrency(summary.total_pending)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
-              </div>
-            )}
-
-            {/* Mensagens de feedback globais da ação */}
-            {actionMessage && (
-              <div className="bg-green-100 dark:bg-green-950/60 border border-green-400 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded-lg mb-4 text-sm shadow-sm flex items-center gap-2" role="alert">
-                <CheckCircle2 size={16} />
-                <span className="block sm:inline">{actionMessage}</span>
-              </div>
-            )}
-
-            {actionError && (
-              <div className="bg-red-100 dark:bg-red-950/60 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg mb-4 text-sm shadow-sm flex items-center gap-2" role="alert">
-                <AlertCircle size={16} />
-                <span className="block sm:inline">{actionError}</span>
-              </div>
-            )}
-
-            {!loadingRecords && !errorRecords && records.length > 0 && (
-              <div className="mb-4 max-w-md relative">
-                <Search
-                  size={18}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-                <input
-                  type="text"
-                  value={studentSearch}
-                  onChange={(e) => setStudentSearch(e.target.value)}
-                  placeholder="Pesquisar aluno..."
-                  className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-main)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6]"
-                />
-              </div>
-            )}
-
-            {loadingRecords && (
-              <div className="text-center py-12">
-                <p className="text-gray-500 dark:text-gray-400 text-sm">A carregar registros de mensalidades...</p>
-              </div>
-            )}
-
-            {errorRecords && (
-              <div className="bg-red-100 dark:bg-red-950/60 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg mb-4 text-sm shadow-sm" role="alert">
-                <span className="block sm:inline">{errorRecords}</span>
-              </div>
-            )}
-
-            {!loadingRecords && !errorRecords && records.length === 0 && (
-              <div className="text-center py-8 bg-[var(--bg-main)] rounded-lg border border-dashed border-[var(--border-color)]">
-                <p className="text-gray-500 dark:text-gray-400 text-sm">Nenhum registro de mensalidade encontrado para este mês.</p>
-              </div>
-            )}
-
-            {!loadingRecords && !errorRecords && records.length > 0 && (
-              <div className="overflow-x-auto border border-[var(--border-color)] rounded-lg mb-6">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-[#38264F]">
-                  <thead className="bg-gray-50 dark:bg-[#151021]">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nome do Aluno</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Valor</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Data de Vencimento</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Situação</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-[var(--bg-surface)] divide-y divide-gray-200 dark:divide-[#38264F]">
-                    {filteredRecords.length > 0 ? filteredRecords.map((record, index) => {
-                      const isRowUpdating = updatingRecordId === record.id;
-                      const isAnyUpdating = updatingRecordId !== null;
-                      const isPaid = Boolean(record.is_paid);
-
-                      const isPaymentUpdating = isRowUpdating && updatingActionType === 'payment';
-                      const isDeleteUpdating = isRowUpdating && updatingActionType === 'delete';
-
-                      return (
-                        <tr key={record.id || index} className="hover:bg-gray-50 dark:hover:bg-[#231935] transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {record.student_name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                            {formatCurrency(record.amount)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                            {formatDate(record.due_date)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <span className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeStyle(record.status)}`}>
-                              {record.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex items-center justify-end space-x-2">
-                            {/* Botão de Edição */}
-                            <button
-                              onClick={() => {
-                                setRecordToEdit(record);
-                                setEditAmount(record.amount);
-                                const dayPart = record.due_date ? record.due_date.split('-')[2] : '';
-                                setEditDueDate(dayPart ? String(Number(dayPart)) : '');
-                                setEditFormError(null);
-                                setShowEditModal(true);
-                              }}
-                              disabled={isAnyUpdating}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 border border-indigo-200 dark:border-indigo-800 transition"
-                              title="Editar mensalidade"
-                            >
-                              <Edit3 size={13} />
-                              Editar
-                            </button>
-
-                            {/* Botão de Alternar Pagamento */}
-                            <button
-                              onClick={() => handleTogglePayment(record)}
-                              disabled={isAnyUpdating}
-                              className={`inline-flex items-center gap-1 cursor-pointer px-3 py-1.5 rounded-md text-xs font-semibold transition ${isPaid
-                                ? 'bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 border border-yellow-200 dark:border-yellow-800'
-                                : 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/50 border border-green-200 dark:border-green-800'
-                                } ${isAnyUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            >
-                              {isPaymentUpdating ? (
-                                'A atualizar...'
-                              ) : isPaid ? (
-                                <>
-                                  <X size={13} />
-                                  Marcar como pendente
-                                </>
-                              ) : (
-                                <>
-                                  <Check size={13} />
-                                  Marcar como pago
-                                </>
-                              )}
-                            </button>
-
-                            {/* Botão de Exclusão */}
-                            <button
-                              onClick={() => handleDeleteRecord(record)}
-                              disabled={isAnyUpdating}
-                              className={`inline-flex items-center gap-1 cursor-pointer px-3 py-1.5 rounded-md text-xs font-semibold bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50 border border-red-200 dark:border-red-900 transition ${isAnyUpdating ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
-                            >
-                              <Trash2 size={13} />
-                              {isDeleteUpdating ? 'A excluir...' : 'Excluir'}
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    }) : (
-                      <tr>
-                        <td colSpan="5" className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                          Nenhum aluno encontrado para essa pesquisa.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* Cards de Resumo Financeiro */}
-            {!loadingRecords && !errorRecords && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-                {/* Total Previsto */}
-                <div className="bg-[var(--bg-main)] border border-[var(--border-color)] rounded-lg shadow-sm p-4 flex flex-col justify-between">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                      Total previsto
-                    </span>
-                    <DollarSign className="text-blue-600 dark:text-[#8B5CF6]" size={20} />
-                  </div>
-                  <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                    {formatCurrency(summary.total_expected)}
-                  </span>
-                </div>
-
-                {/* Total Recebido */}
-                <div className="bg-[var(--bg-main)] border border-[var(--border-color)] rounded-lg shadow-sm p-4 flex flex-col justify-between">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wide">
-                      Total recebido
-                    </span>
-                    <CheckCircle2 className="text-green-600 dark:text-green-400" size={20} />
-                  </div>
-                  <span className="text-2xl font-bold text-green-700 dark:text-green-300">
-                    {formatCurrency(summary.total_paid)}
-                  </span>
-                </div>
-
-                {/* Total Pendente */}
-                <div className="bg-[var(--bg-main)] border border-[var(--border-color)] rounded-lg shadow-sm p-4 flex flex-col justify-between">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 uppercase tracking-wide">
-                      Total pendente
-                    </span>
-                    <Clock className="text-amber-600 dark:text-amber-400" size={20} />
-                  </div>
-                  <span className="text-2xl font-bold text-amber-700 dark:text-amber-300">
-                    {formatCurrency(summary.total_pending)}
-                  </span>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
 
           </div>
         )}
+
       </div>
     </div>
   );
