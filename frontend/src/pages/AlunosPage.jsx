@@ -95,7 +95,7 @@ export default function AlunosPage() {
           </div>
           <button
             onClick={handleOpenCreateModal}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED] text-white px-4 py-2 rounded-lg text-sm font-medium shadow transition"
+            className="flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED] text-white px-4 py-2 rounded-lg text-sm font-medium shadow transition"
           >
             <UserPlus size={16} />
             Novo Aluno
@@ -178,14 +178,14 @@ export default function AlunosPage() {
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                             <button
                               onClick={() => handleOpenEditModal(aluno)}
-                              className="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 px-3 py-1.5 rounded-md text-xs font-semibold transition"
+                              className="inline-flex items-center gap-1 cursor-pointer text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800 px-3 py-1.5 rounded-md text-xs font-semibold transition"
                             >
                               <Edit3 size={14} />
                               Editar
                             </button>
                             <button
                               onClick={() => handleToggleStatus(aluno)}
-                              className="inline-flex items-center gap-1 text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 px-3 py-1.5 rounded-md text-xs font-semibold transition"
+                              className="inline-flex items-center gap-1 cursor-pointer text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 px-3 py-1.5 rounded-md text-xs font-semibold transition"
                             >
                               <UserX size={14} />
                               Inativar
@@ -203,7 +203,7 @@ export default function AlunosPage() {
             <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] shadow-md rounded-lg overflow-hidden">
               <button
                 onClick={() => setInactiveOpen(!inactiveOpen)}
-                className="w-full px-6 py-4 bg-gray-100 dark:bg-[#151021] hover:bg-gray-200 dark:hover:bg-[#231935] flex items-center justify-between text-left text-sm font-semibold text-gray-700 dark:text-gray-200 transition focus:outline-none"
+                className="w-full px-6 py-4 bg-gray-100 cursor-pointer dark:bg-[#151021] hover:bg-gray-200 dark:hover:bg-[#231935] flex items-center justify-between text-left text-sm font-semibold text-gray-700 dark:text-gray-200 transition focus:outline-none"
               >
                 <span className="flex items-center gap-2">
                   {inactiveOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
@@ -250,14 +250,14 @@ export default function AlunosPage() {
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                               <button
                                 onClick={() => handleOpenEditModal(aluno)}
-                                className="inline-flex items-center gap-1 text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-200 bg-indigo-100 dark:bg-indigo-900/50 border border-indigo-300 dark:border-indigo-700/50 px-3 py-1.5 rounded-md text-xs font-semibold transition"
+                                className="inline-flex items-center gap-1 cursor-pointer text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-200 bg-indigo-100 dark:bg-indigo-900/50 border border-indigo-300 dark:border-indigo-700/50 px-3 py-1.5 rounded-md text-xs font-semibold transition"
                               >
                                 <Edit3 size={14} />
                                 Editar
                               </button>
                               <button
                                 onClick={() => handleToggleStatus(aluno)}
-                                className="inline-flex items-center gap-1 text-green-700 dark:text-green-300 hover:text-green-900 dark:hover:text-green-200 bg-green-100 dark:bg-green-900/50 border border-indigo-300 dark:border-indigo-700/50 px-3 py-1.5 rounded-md text-xs font-semibold transition"
+                                className="inline-flex items-center gap-1 cursor-pointer text-green-700 dark:text-green-300 hover:text-green-900 dark:hover:text-green-200 bg-green-100 dark:bg-green-900/50 border border-indigo-300 dark:border-indigo-700/50 px-3 py-1.5 rounded-md text-xs font-semibold transition"
                               >
                                 <UserCheck size={14} />
                                 Ativar

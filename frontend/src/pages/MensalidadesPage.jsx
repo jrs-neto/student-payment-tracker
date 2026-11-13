@@ -682,7 +682,7 @@ export default function MensalidadesPage() {
               setCopyError(null);
               if (selectedMonth) setCopySourceId(String(selectedMonth.id));
             }}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED] text-white text-sm font-semibold px-4 py-2 rounded-lg transition shadow-sm self-start md:self-auto"
+            className="flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED] text-white text-sm font-semibold px-4 py-2 rounded-lg transition shadow-sm self-start md:self-auto"
           >
             <Copy size={16} />
             Criar próximo mês
@@ -757,7 +757,7 @@ export default function MensalidadesPage() {
                   setCopyError(null);
                 }}
                 disabled={isCopying}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg transition"
+                className="px-4 py-2 bg-gray-200 cursor-pointer dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg transition"
               >
                 Cancelar
               </button>
@@ -765,7 +765,7 @@ export default function MensalidadesPage() {
                 type="button"
                 onClick={handleCopyMonth}
                 disabled={isCopying}
-                className={`px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition ${isCopying ? 'opacity-50 cursor-not-allowed' : ''
+                className={`px-4 py-2 bg-emerald-600 cursor-pointer hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition ${isCopying ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
               >
                 {isCopying ? 'A criar...' : 'Confirmar Cópia'}
@@ -894,7 +894,7 @@ export default function MensalidadesPage() {
                 <button
                   onClick={() => setIsDeleteMonthModalOpen(true)}
                   disabled={isDeletingMonth}
-                  className="flex items-center gap-1.5 bg-red-50 dark:bg-red-950/50 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg text-sm font-semibold transition shadow-sm border border-red-200 dark:border-red-900"
+                  className="flex items-center gap-1.5 cursor-pointer bg-red-50 dark:bg-red-950/50 hover:bg-red-100 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg text-sm font-semibold transition shadow-sm border border-red-200 dark:border-red-900"
                   title="Excluir mês selecionado"
                 >
                   <Trash2 size={16} />
@@ -1015,7 +1015,7 @@ export default function MensalidadesPage() {
                     type="button"
                     onClick={handleAddRecord}
                     disabled={isSaving}
-                    className={`px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED] text-white text-sm font-semibold rounded-lg transition ${isSaving ? 'opacity-50 cursor-not-allowed' : ''
+                    className={`px-4 py-2 bg-blue-600 cursor-pointer hover:bg-blue-700 dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED] text-white text-sm font-semibold rounded-lg transition ${isSaving ? 'opacity-50 cursor-not-allowed' : ''
                       }`}
                   >
                     {isSaving ? 'A salvar...' : 'Salvar'}
@@ -1029,7 +1029,7 @@ export default function MensalidadesPage() {
               <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
                 <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-lg max-w-lg w-full p-6 shadow-xl">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                    <Edit3 size={18} className="text-blue-600 dark:text-[#8B5CF6]" />
+                    <Edit3 size={18} className="text-blue-600 cursor-pointer dark:text-[#8B5CF6]" />
                     Editar Mensalidade - {recordToEdit?.student_name}
                   </h3>
 
@@ -1090,7 +1090,7 @@ export default function MensalidadesPage() {
                         setEditFormError(null);
                       }}
                       disabled={isUpdatingRecord}
-                      className="px-4 py-2 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium transition"
+                      className="px-4 py-2 bg-gray-200 cursor-pointer dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium transition"
                     >
                       Cancelar
                     </button>
@@ -1098,7 +1098,7 @@ export default function MensalidadesPage() {
                       type="button"
                       onClick={handleUpdateRecord}
                       disabled={isUpdatingRecord}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED] text-white rounded-lg text-sm font-semibold transition shadow-sm disabled:opacity-50"
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 cursor-pointer dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED] text-white rounded-lg text-sm font-semibold transition shadow-sm disabled:opacity-50"
                     >
                       {isUpdatingRecord ? 'A guardar...' : 'Salvar Alterações'}
                     </button>
@@ -1216,7 +1216,7 @@ export default function MensalidadesPage() {
                             <button
                               onClick={() => handleTogglePayment(record)}
                               disabled={isAnyUpdating}
-                              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold transition ${isPaid
+                              className={`inline-flex items-center gap-1 cursor-pointer px-3 py-1.5 rounded-md text-xs font-semibold transition ${isPaid
                                 ? 'bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 border border-yellow-200 dark:border-yellow-800'
                                 : 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/50 border border-green-200 dark:border-green-800'
                                 } ${isAnyUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -1240,7 +1240,7 @@ export default function MensalidadesPage() {
                             <button
                               onClick={() => handleDeleteRecord(record)}
                               disabled={isAnyUpdating}
-                              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50 border border-red-200 dark:border-red-900 transition ${isAnyUpdating ? 'opacity-50 cursor-not-allowed' : ''
+                              className={`inline-flex items-center gap-1 cursor-pointer px-3 py-1.5 rounded-md text-xs font-semibold bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50 border border-red-200 dark:border-red-900 transition ${isAnyUpdating ? 'opacity-50 cursor-not-allowed' : ''
                                 }`}
                             >
                               <Trash2 size={13} />

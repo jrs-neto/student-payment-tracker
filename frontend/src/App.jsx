@@ -38,7 +38,7 @@ export default function App() {
   };
 
   const getTabClass = (tab) =>
-    `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === tab
+    `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-colors ${activeTab === tab
       ? 'bg-blue-100 dark:bg-[#8B5CF6]/20 text-blue-700 dark:text-[#8B5CF6]'
       : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
     }`;
@@ -78,7 +78,7 @@ export default function App() {
                 ? 'Mudar para o modo claro'
                 : 'Mudar para o modo escuro'
             }
-            className="p-2 rounded-lg bg-gray-100 dark:bg-[#38264F] text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-[#4c356b] transition-colors focus:outline-none"
+            className="p-2 rounded-lg cursor-pointer bg-gray-100 dark:bg-[#38264F] text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-[#4c356b] transition-colors focus:outline-none"
             title={
               theme === 'dark'
                 ? 'Alternar para Modo Claro'

@@ -242,7 +242,7 @@ export default function AssistantPage() {
             type="button"
             onClick={handleNewConversation}
             disabled={loading}
-            className="flex items-center gap-2 rounded-lg border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-main)] transition-colors hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-[#38264F]"
+            className="flex items-center gap-2 rounded-lg border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--text-main)] transition-colors hover:bg-gray-100 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-[#38264F]"
             title="Iniciar nova conversa"
           >
             <Plus size={17} />
@@ -285,7 +285,7 @@ export default function AssistantPage() {
                     handleSendMessage("Quantos alunos estão cadastrados?")
                   }
                   disabled={loading}
-                  className="rounded-lg border border-[var(--border-color)] p-3 text-sm text-[var(--text-main)] transition-colors hover:border-purple-400 hover:bg-purple-50 disabled:opacity-50 dark:hover:bg-[#38264F]"
+                  className="rounded-lg border border-[var(--border-color)] p-3 text-sm text-[var(--text-main)] transition-colors hover:border-purple-400 hover:bg-purple-50 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-[#38264F]"
                 >
                   Quantos alunos estão cadastrados?
                 </button>
@@ -296,7 +296,7 @@ export default function AssistantPage() {
                     handleSendMessage("Quanto temos para receber neste mês?")
                   }
                   disabled={loading}
-                  className="rounded-lg border border-[var(--border-color)] p-3 text-sm text-[var(--text-main)] transition-colors hover:border-purple-400 hover:bg-purple-50 disabled:opacity-50 dark:hover:bg-[#38264F]"
+                  className="rounded-lg border border-[var(--border-color)] p-3 text-sm text-[var(--text-main)] transition-colors hover:border-purple-400 hover:bg-purple-50 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-[#38264F]"
                 >
                   Quanto temos para receber neste mês?
                 </button>
@@ -307,7 +307,7 @@ export default function AssistantPage() {
                     handleSendMessage("Quantas mensalidades estão atrasadas?")
                   }
                   disabled={loading}
-                  className="rounded-lg border border-[var(--border-color)] p-3 text-sm text-[var(--text-main)] transition-colors hover:border-purple-400 hover:bg-purple-50 disabled:opacity-50 dark:hover:bg-[#38264F]"
+                  className="rounded-lg border border-[var(--border-color)] p-3 text-sm text-[var(--text-main)] transition-colors hover:border-purple-400 hover:bg-purple-50 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-[#38264F]"
                 >
                   Quantas mensalidades estão atrasadas?
                 </button>
@@ -320,7 +320,7 @@ export default function AssistantPage() {
                     )
                   }
                   disabled={loading}
-                  className="rounded-lg border border-[var(--border-color)] p-3 text-sm text-[var(--text-main)] transition-colors hover:border-purple-400 hover:bg-purple-50 disabled:opacity-50 dark:hover:bg-[#38264F]"
+                  className="rounded-lg border border-[var(--border-color)] p-3 text-sm text-[var(--text-main)] transition-colors hover:border-purple-400 hover:bg-purple-50 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-[#38264F]"
                 >
                   Quais alunos possuem pagamentos pendentes?
                 </button>
@@ -423,7 +423,7 @@ export default function AssistantPage() {
             <button
               type="submit"
               disabled={!input.trim() || loading}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white transition-colors hover:bg-[var(--color-primary-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)] text-white transition-colors hover:bg-[var(--color-primary-hover)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Enviar mensagem"
               title="Enviar mensagem"
             >
