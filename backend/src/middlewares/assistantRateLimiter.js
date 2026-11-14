@@ -5,6 +5,8 @@ export const assistantRateLimiter = rateLimit({
 
   limit: 10,
 
+  keyGenerator: (req) => `user:${req.user.id}`,
+
   standardHeaders: true,
 
   legacyHeaders: false,

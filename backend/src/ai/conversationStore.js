@@ -5,7 +5,7 @@ const conversations = new Map();
 const INACTIVITY_LIMIT_MS = 30 * 60 * 1000;
 const MAX_MESSAGES = 20;
 
-// Remove conversas que ultrapassaram o tempo de inatividade
+// Remove conversas que ultrapassaram o tempo de inatividade.
 function removeExpiredConversations() {
   const now = Date.now();
 
@@ -16,14 +16,19 @@ function removeExpiredConversations() {
   }
 }
 
-// Cria uma nova conversa
-export function createConversation() {
+// Cria uma nova conversa vinculada ao usuário.
+export function createConversation(userId) {
+  if (!Number.isSafeInteger(userId) || userId <= 0) {
+    throw new Error("Usuário inválido.");
+  }
+
   removeExpiredConversations();
 
   const conversationId = randomUUID();
 
   const conversation = {
     id: conversationId,
+    userId,
     messages: [],
     updatedAt: Date.now(),
   };
@@ -36,9 +41,9 @@ export function createConversation() {
   };
 }
 
-// Recupera uma conversa existente
-export function getConversation(conversationId) {
-  if (typeof conversationId !== "string" || !conversationId.trim()) {
+// Recupera uma conversa somente se pertencer ao usuário.
+export function getConversation(conversationId, userId) {
+  if (typeof conversationId !== "string" || !conversationId.trim() || !Number.isSafeInteger(userId) || userId <= 0) {
     return null;
   }
 
@@ -46,7 +51,7 @@ export function getConversation(conversationId) {
 
   const conversation = conversations.get(conversationId);
 
-  if (!conversation) {
+  if (!conversation || conversation.userId !== userId) {
     return null;
   }
 
@@ -61,8 +66,8 @@ export function getConversation(conversationId) {
   };
 }
 
-// Adiciona uma mensagem ao histórico
-export function addConversationMessage(conversationId, role, content) {
+// Adiciona uma mensagem somente à conversa do usuário proprietário.
+export function addConversationMessage(conversationId, role, content, userId) {
   if (!["user", "assistant"].includes(role)) {
     throw new Error("Papel da mensagem inválido.");
   }
@@ -71,9 +76,13 @@ export function addConversationMessage(conversationId, role, content) {
     throw new Error("O conteúdo da mensagem é inválido.");
   }
 
+  if (!Number.isSafeInteger(userId) || userId <= 0) {
+    throw new Error("Usuário inválido.");
+  }
+
   const conversation = conversations.get(conversationId);
 
-  if (!conversation) {
+  if (!conversation || conversation.userId !== userId) {
     throw new Error("Conversa não encontrada ou expirada.");
   }
 
@@ -88,5 +97,5 @@ export function addConversationMessage(conversationId, role, content) {
 
   conversation.updatedAt = Date.now();
 
-  return getConversation(conversationId);
+  return getConversation(conversationId, userId);
 }

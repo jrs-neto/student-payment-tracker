@@ -4,57 +4,61 @@ import { createConversation, getConversation, addConversationMessage } from "../
 
 const MAX_MESSAGE_LENGTH = 4000;
 
-// Cria o serviço com a função de resposta que será utilizada
+function createSafeError(message, status) {
+  const error = new Error(message);
+  error.status = status;
+  error.isSafe = true;
+  return error;
+}
+
+function validateUserId(userId) {
+  if (!Number.isSafeInteger(userId) || userId <= 0) {
+    throw createSafeError("Usuário inválido.", 401);
+  }
+}
+
+// Cria o serviço com a função de resposta que será utilizada.
 export function createAssistantService(responseGenerator = requestAssistantResponse) {
   return {
-    async sendMessage(message, conversationId) {
-      let conversation;
+    async sendMessage(message, conversationId, userId) {
+      validateUserId(userId);
 
       if (typeof message !== "string" || !message.trim()) {
-        const error = new Error("A mensagem não pode estar vazia.");
-        error.status = 400;
-        error.isSafe = true;
-        throw error;
+        throw createSafeError("A mensagem não pode estar vazia.", 400);
       }
 
       const normalizedMessage = message.trim();
 
       if (normalizedMessage.length > MAX_MESSAGE_LENGTH) {
-        const error = new Error(`A mensagem ultrapassou o limite de ${MAX_MESSAGE_LENGTH} caracteres.`);
-        error.status = 400;
-        error.isSafe = true;
-        throw error;
+        throw createSafeError(`A mensagem ultrapassou o limite de ${MAX_MESSAGE_LENGTH} caracteres.`, 400);
       }
 
       if (conversationId !== undefined && conversationId !== null && typeof conversationId !== "string") {
-        const error = new Error("O identificador da conversa é inválido.");
-        error.status = 400;
-        error.isSafe = true;
-        throw error;
+        throw createSafeError("O identificador da conversa é inválido.", 400);
       }
 
+      let conversation;
+
       if (conversationId && conversationId.trim()) {
-        conversation = getConversation(conversationId.trim());
+        conversation = getConversation(conversationId.trim(), userId);
 
         if (!conversation) {
-          const error = new Error("Conversa não encontrada ou expirada. Inicie uma nova conversa.");
-          error.status = 404;
-          error.isSafe = true;
-          throw error;
+          throw createSafeError("Conversa não encontrada ou expirada. Inicie uma nova conversa.", 404);
         }
       } else {
-        conversation = createConversation();
+        conversation = createConversation(userId);
       }
 
       try {
         const response = await responseGenerator({
           prompt: normalizedMessage,
           history: conversation.messages,
+          userId,
         });
 
-        addConversationMessage(conversation.conversationId, "user", normalizedMessage);
+        addConversationMessage(conversation.conversationId, "user", normalizedMessage, userId);
 
-        addConversationMessage(conversation.conversationId, "assistant", response);
+        addConversationMessage(conversation.conversationId, "assistant", response, userId);
 
         return {
           conversationId: conversation.conversationId,
@@ -62,6 +66,7 @@ export function createAssistantService(responseGenerator = requestAssistantRespo
         };
       } catch (error) {
         const errorMessage = String(error?.message || "").toLowerCase();
+
         const errorName = String(error?.name || "").toLowerCase();
 
         const rawStatus = error?.status ?? error?.statusCode ?? error?.response?.status;
@@ -75,13 +80,16 @@ export function createAssistantService(responseGenerator = requestAssistantRespo
         });
 
         let status = 502;
+
         let errorMessageResponse = "Não foi possível estabelecer comunicação com o serviço de IA.";
 
         if (errorName.includes("timeout") || errorMessage.includes("timeout") || errorMessage.includes("timed out")) {
           status = 504;
+
           errorMessageResponse = "O serviço de IA demorou demais para responder. Tente novamente.";
         } else if (statusCode === 503 || statusCode === 429) {
           status = 503;
+
           errorMessageResponse = "O serviço de IA está temporariamente indisponível. Tente novamente em instantes.";
         }
 
@@ -97,5 +105,5 @@ export function createAssistantService(responseGenerator = requestAssistantRespo
   };
 }
 
-// Serviço utilizado normalmente pela aplicação
+// Serviço utilizado normalmente pela aplicação.
 export const assistantService = createAssistantService();

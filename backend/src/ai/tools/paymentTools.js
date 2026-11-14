@@ -1,7 +1,7 @@
 import { monthlyModel } from "../../models/monthlyModel.js";
 import { monthlyService } from "../../services/monthlyService.js";
 
-// Declaração das ferramentas disponíveis para os provedores de IA
+// Declaração das ferramentas disponíveis para os provedores de IA.
 export const paymentToolDeclarations = [
   {
     type: "function",
@@ -49,7 +49,7 @@ export const paymentToolDeclarations = [
   },
 ];
 
-// Obtém o ano e o mês atuais em America/Sao_Paulo
+// Obtém o ano e o mês atuais em America/Sao_Paulo.
 function getCurrentReferenceDate() {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Sao_Paulo",
@@ -63,26 +63,33 @@ function getCurrentReferenceDate() {
   };
 }
 
-// Valida os argumentos recebidos
+// Valida o usuário autenticado.
+function validateUserId(userId) {
+  if (!Number.isSafeInteger(userId) || userId <= 0) {
+    throw new Error("Usuário inválido.");
+  }
+}
+
+// Valida os argumentos recebidos.
 function validateArguments(args) {
   if (!args || typeof args !== "object" || Array.isArray(args)) {
     throw new Error("Os argumentos da ferramenta são inválidos.");
   }
 }
 
-// Valida os parâmetros de referência
+// Valida os parâmetros de referência.
 function validateReferenceDate(year, month) {
   if (!Number.isInteger(year) || year < 2000 || year > 2100 || !Number.isInteger(month) || month < 1 || month > 12) {
     throw new Error("Ano ou mês de referência inválido.");
   }
 }
 
-// Localiza o mês de referência
-async function findReferenceMonth(year, month) {
-  return await monthlyModel.findMonthByYearAndMonth(year, month);
+// Localiza o mês de referência pertencente ao usuário.
+async function findReferenceMonth(year, month, userId) {
+  return await monthlyModel.findMonthByYearAndMonth(year, month, userId);
 }
 
-// Formata o nome do mês
+// Formata o nome do mês.
 function getMonthName(month) {
   return new Intl.DateTimeFormat("pt-BR", {
     month: "long",
@@ -90,8 +97,9 @@ function getMonthName(month) {
   }).format(new Date(Date.UTC(2026, month - 1, 15)));
 }
 
-// Executa as ferramentas autorizadas pelo backend
-export async function executePaymentTool(name, args = {}) {
+// Executa as ferramentas autorizadas pelo backend.
+export async function executePaymentTool(name, args = {}, userId) {
+  validateUserId(userId);
   validateArguments(args);
 
   switch (name) {
@@ -103,7 +111,7 @@ export async function executePaymentTool(name, args = {}) {
 
       validateReferenceDate(year, month);
 
-      const referenceMonth = await findReferenceMonth(year, month);
+      const referenceMonth = await findReferenceMonth(year, month, userId);
 
       if (!referenceMonth) {
         return {
@@ -114,7 +122,7 @@ export async function executePaymentTool(name, args = {}) {
         };
       }
 
-      const summary = await monthlyModel.getMonthFinancialSummary(referenceMonth.id);
+      const summary = await monthlyModel.getMonthFinancialSummary(referenceMonth.id, userId);
 
       return {
         found: true,
@@ -141,7 +149,7 @@ export async function executePaymentTool(name, args = {}) {
         throw new Error("Status de pagamento inválido.");
       }
 
-      const referenceMonth = await findReferenceMonth(year, month);
+      const referenceMonth = await findReferenceMonth(year, month, userId);
 
       if (!referenceMonth) {
         return {
@@ -156,7 +164,7 @@ export async function executePaymentTool(name, args = {}) {
         };
       }
 
-      const monthData = await monthlyService.getMonthRecords(referenceMonth.id);
+      const monthData = await monthlyService.getMonthRecords(referenceMonth.id, userId);
 
       const records =
         status === "Todos" ? monthData.records : monthData.records.filter((record) => record.status === status);

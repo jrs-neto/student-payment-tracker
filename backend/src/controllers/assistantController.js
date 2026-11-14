@@ -3,7 +3,7 @@ import { assistantService } from "../services/assistantService.js";
 export const assistantController = {
   async sendMessage(req, res, next) {
     try {
-      const { message, conversationId } = req.body;
+      const { message, conversationId } = req.body ?? {};
 
       if (typeof message !== "string" || !message.trim()) {
         return res.status(400).json({
@@ -27,7 +27,7 @@ export const assistantController = {
         });
       }
 
-      const result = await assistantService.sendMessage(message.trim(), conversationId);
+      const result = await assistantService.sendMessage(message.trim(), conversationId, req.user.id);
 
       return res.status(200).json(result);
     } catch (error) {

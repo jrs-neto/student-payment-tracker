@@ -1,51 +1,61 @@
 import express from "express";
 import cors from "cors";
+
 import "./config/database.js";
+
+import authRoutes from "./routes/authRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import monthlyRoutes from "./routes/monthlyRoutes.js";
+import assistantRoutes from "./routes/assistantRoutes.js";
+
 import { notFoundHandler } from "./middlewares/notFoundHandler.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
-import assistantRoutes from "./routes/assistantRoutes.js";
 
 const app = express();
 
 app.set("trust proxy", 1);
 
-const allowedOrigins = ["http://localhost:5173"];
+const allowedOrigins = [
+  "http://localhost:5173",
+  ...(process.env.FRONTEND_URL || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+];
 
-if (process.env.FRONTEND_URL) {
-  const envOrigins = process.env.FRONTEND_URL.split(",")
-    .map((url) => url.trim().replace(/\/$/, ""))
-    .filter(Boolean);
-  allowedOrigins.push(...envOrigins);
-}
-
-// Configuração do CORS para origens autorizadas
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Origem não permitida pelo CORS."));
+    },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 
-// Middleware para interpretar JSON
-app.use(express.json());
+app.use(express.json({ limit: "100kb" }));
 
-// Rota raiz temporária
+// Verificação da API
 app.get("/", (req, res) => {
-  res.json({ message: "API do Sistema de Mensalidades rodando com sucesso!" });
+  res.status(200).json({
+    message: "Student Payment Tracker API está funcionando.",
+  });
 });
 
-// Registro das rotas de alunos, mensalidades e assistente
+// Rotas de autenticação
+app.use("/api/auth", authRoutes);
+
+// Rotas da aplicação
 app.use("/api/students", studentRoutes);
 app.use("/api", monthlyRoutes);
 app.use("/api/assistant", assistantRoutes);
 
-// Middleware para rotas inexistentes (404)
+// Tratamento de erros
 app.use(notFoundHandler);
-
-// Middleware centralizado de tratamento de erros
 app.use(errorHandler);
 
 export default app;

@@ -1,6 +1,6 @@
 import { studentModel } from "../../models/studentModel.js";
 
-// Declaração das ferramentas disponíveis para os provedores de IA
+// Declaração das ferramentas disponíveis para os provedores de IA.
 export const studentToolDeclarations = [
   {
     type: "function",
@@ -14,15 +14,19 @@ export const studentToolDeclarations = [
   },
 ];
 
-// Execução das ferramentas no backend
-export async function executeStudentTool(name, args = {}) {
+// Execução das ferramentas no backend.
+export async function executeStudentTool(name, userId, args = {}) {
+  if (!Number.isSafeInteger(userId) || userId <= 0) {
+    throw new Error("Usuário inválido.");
+  }
+
   if (!args || typeof args !== "object" || Array.isArray(args)) {
     throw new Error("Os argumentos da ferramenta são inválidos.");
   }
 
   switch (name) {
     case "getStudentCount": {
-      const totalStudents = await studentModel.countAll();
+      const totalStudents = await studentModel.countAll(userId);
 
       return {
         totalStudents,

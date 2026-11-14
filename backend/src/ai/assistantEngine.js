@@ -52,8 +52,13 @@ function validateProviderResponse(response) {
   return response;
 }
 
-export async function runAssistant({ provider, prompt, history = [], toolDeclarations, executeTool }) {
-  // Valida o provedor
+export async function runAssistant({ provider, prompt, history = [], toolDeclarations, executeTool, userId }) {
+  // Valida o usuário autenticado.
+  if (!Number.isSafeInteger(userId) || userId <= 0) {
+    throw new Error("Usuário inválido.");
+  }
+
+  // Valida o provedor.
   if (
     !provider ||
     typeof provider.startConversation !== "function" ||
@@ -62,15 +67,15 @@ export async function runAssistant({ provider, prompt, history = [], toolDeclara
     throw new Error("Provedor de IA inválido ou incompleto.");
   }
 
-  // Valida a mensagem
+  // Valida a mensagem.
   if (typeof prompt !== "string" || !prompt.trim()) {
     throw new Error("A mensagem enviada ao assistente é inválida.");
   }
 
-  // Valida o histórico
+  // Valida o histórico.
   validateHistory(history);
 
-  // Valida as ferramentas
+  // Valida as ferramentas.
   if (!Array.isArray(toolDeclarations)) {
     throw new Error("As declarações de ferramentas são inválidas.");
   }
@@ -79,7 +84,7 @@ export async function runAssistant({ provider, prompt, history = [], toolDeclara
     throw new Error("O executor de ferramentas é inválido.");
   }
 
-  // Inicia a conversa com o provedor
+  // Inicia a conversa com o provedor.
   let response = validateProviderResponse(
     await provider.startConversation({
       prompt: prompt.trim(),
@@ -88,25 +93,26 @@ export async function runAssistant({ provider, prompt, history = [], toolDeclara
     }),
   );
 
-  // Limite de segurança para evitar ciclos infinitos
+  // Limite de segurança para evitar ciclos infinitos.
   const maxToolRounds = 5;
 
   for (let round = 0; round < maxToolRounds; round++) {
-    // Se não houver ferramentas solicitadas, retorna a resposta
+    // Se não houver ferramentas solicitadas, retorna a resposta.
     if (response.toolCalls.length === 0) {
       return response.text;
     }
 
-    // Valida o identificador da conversa
+    // Valida o identificador da conversa.
     if (typeof response.conversationId !== "string" || !response.conversationId.trim()) {
       throw new Error("O provedor não retornou um identificador de conversa válido.");
     }
 
-    // Executa as ferramentas autorizadas
+    // Executa as ferramentas autorizadas.
     const toolResults = await Promise.all(
       response.toolCalls.map(async (call) => {
         try {
-          const result = await executeTool(call.name, call.arguments ?? {});
+          // O userId vem exclusivamente do contexto autenticado.
+          const result = await executeTool(call.name, call.arguments ?? {}, userId);
 
           return {
             callId: call.id,
@@ -127,7 +133,7 @@ export async function runAssistant({ provider, prompt, history = [], toolDeclara
       }),
     );
 
-    // Continua a interação com os resultados das ferramentas
+    // Continua a interação com os resultados das ferramentas.
     response = validateProviderResponse(
       await provider.continueConversation({
         conversationId: response.conversationId,
