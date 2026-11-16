@@ -26,6 +26,11 @@ export async function executeStudentTool(name, userId, args = {}) {
 
   switch (name) {
     case "getStudentCount": {
+      const unexpectedKeys = Object.keys(args);
+      if (unexpectedKeys.length > 0) {
+        throw new Error(`A ferramenta getStudentCount não aceita parâmetros. Foram recebidos: ${unexpectedKeys.join(", ")}`);
+      }
+
       const totalStudents = await studentModel.countAll(userId);
 
       return {

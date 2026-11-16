@@ -4,6 +4,7 @@ const conversations = new Map();
 
 const INACTIVITY_LIMIT_MS = 30 * 60 * 1000;
 const MAX_MESSAGES = 20;
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 
 // Remove conversas que ultrapassaram o tempo de inatividade.
 function removeExpiredConversations() {
@@ -15,6 +16,21 @@ function removeExpiredConversations() {
     }
   }
 }
+
+// Singleton de timer periódico para evitar acúmulo desnecessário de memória
+let cleanupTimer = null;
+
+function ensureCleanupTimer() {
+  if (!cleanupTimer) {
+    cleanupTimer = setInterval(removeExpiredConversations, CLEANUP_INTERVAL_MS);
+    if (typeof cleanupTimer?.unref === "function") {
+      cleanupTimer.unref();
+    }
+  }
+}
+
+// Inicializa a limpeza periódica permitindo encerramento natural do processo
+ensureCleanupTimer();
 
 // Cria uma nova conversa vinculada ao usuário.
 export function createConversation(userId) {

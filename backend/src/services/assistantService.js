@@ -49,47 +49,47 @@ export function createAssistantService(responseGenerator = requestAssistantRespo
         conversation = createConversation(userId);
       }
 
+      let response;
+
       try {
-        const response = await responseGenerator({
+        response = await responseGenerator({
           prompt: normalizedMessage,
           history: conversation.messages,
           userId,
         });
-
-        addConversationMessage(conversation.conversationId, "user", normalizedMessage, userId);
-
-        addConversationMessage(conversation.conversationId, "assistant", response, userId);
-
-        return {
-          conversationId: conversation.conversationId,
-          response,
-        };
       } catch (error) {
-        const errorMessage = String(error?.message || "").toLowerCase();
-
-        const errorName = String(error?.name || "").toLowerCase();
-
         const rawStatus = error?.status ?? error?.statusCode ?? error?.response?.status;
-
         const statusCode = Number(rawStatus);
 
-        console.error("Erro ao processar mensagem do assistente:", {
+        // Preserva erros 4xx explicitamente marcados como seguros
+        if (Number.isInteger(statusCode) && statusCode >= 400 && statusCode < 500 && error.isSafe === true) {
+          throw error;
+        }
+
+        const errorMessage = String(error?.message || "").toLowerCase();
+        const errorName = String(error?.name || "").toLowerCase();
+
+        console.error("Erro ao processar mensagem do assistente com o provedor de IA:", {
           name: error?.name || "Erro desconhecido",
           message: error?.message || "Sem mensagem de erro",
           status: Number.isInteger(statusCode) ? statusCode : null,
         });
 
         let status = 502;
-
         let errorMessageResponse = "Não foi possível estabelecer comunicação com o serviço de IA.";
 
-        if (errorName.includes("timeout") || errorMessage.includes("timeout") || errorMessage.includes("timed out")) {
+        if (
+          statusCode === 408 ||
+          statusCode === 504 ||
+          errorName.includes("timeout") ||
+          errorMessage.includes("timeout") ||
+          errorMessage.includes("timed out") ||
+          errorName.includes("continuationinterrupted")
+        ) {
           status = 504;
-
           errorMessageResponse = "O serviço de IA demorou demais para responder. Tente novamente.";
         } else if (statusCode === 503 || statusCode === 429) {
           status = 503;
-
           errorMessageResponse = "O serviço de IA está temporariamente indisponível. Tente novamente em instantes.";
         }
 
@@ -98,9 +98,33 @@ export function createAssistantService(responseGenerator = requestAssistantRespo
         });
 
         serviceError.status = status;
+        serviceError.isSafe = true;
 
         throw serviceError;
       }
+
+      // Armazenamento das mensagens no histórico da conversa
+      try {
+        addConversationMessage(conversation.conversationId, "user", normalizedMessage, userId);
+        addConversationMessage(conversation.conversationId, "assistant", response, userId);
+      } catch (storeError) {
+        console.error("Erro ao registrar mensagens no armazenamento da conversa:", {
+          conversationId: conversation.conversationId,
+          userId,
+          error: storeError?.message || storeError,
+        });
+
+        const storageError = new Error("Erro interno ao atualizar o histórico da conversa.", {
+          cause: storeError,
+        });
+        storageError.status = 500;
+        throw storageError;
+      }
+
+      return {
+        conversationId: conversation.conversationId,
+        response,
+      };
     },
   };
 }

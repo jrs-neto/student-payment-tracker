@@ -40,6 +40,14 @@ export const errorHandler = (err, req, res, next) => {
     message = safeMessages[statusCode] || "Ocorreu um erro ao processar a requisição.";
   }
 
+  // Registra erros internos (5xx) no console para depuração, sem expor dados sensíveis
+  if (statusCode >= 500) {
+    console.error(`[ERRO INTERNO ${statusCode}] ${req.method} ${req.originalUrl || req.url}:`, {
+      message: err.message,
+      stack: err.stack,
+    });
+  }
+
   return res.status(statusCode).json({
     error: {
       status: statusCode,

@@ -6,7 +6,6 @@ import { authMiddleware } from "../middlewares/authMiddleware.js";
 
 const router = Router();
 
-// Limita tentativas de cadastro e login por endereço IP.
 const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
@@ -23,6 +22,7 @@ const authRateLimiter = rateLimit({
 // Rotas públicas
 router.post("/register", authRateLimiter, authController.register);
 router.post("/login", authRateLimiter, authController.login);
+router.post("/claim-legacy", authRateLimiter, authController.claimLegacy);
 
 // Rota protegida
 router.get("/me", authMiddleware, authController.me);

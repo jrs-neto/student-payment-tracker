@@ -24,7 +24,7 @@ function getClient() {
 
 const MODEL = "gemini-3.5-flash-lite";
 
-// Configurações das requisições ao Gemini
+// Configurações das requisições ao Gemini compatíveis com @google/genai 3.2.0
 const REQUEST_OPTIONS = {
   timeout_ms: 15000,
   retries: {
@@ -38,7 +38,7 @@ const REQUEST_OPTIONS = {
       maxElapsedTime: 1500,
     },
   },
-  retry_codes: ["408", "429", ...Array.from({ length: 100 }, (_, index) => String(500 + index))],
+  retry_codes: ["408", "429", "5XX"],
 };
 
 // Formata o histórico para o formato de entrada do Gemini

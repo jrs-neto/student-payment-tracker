@@ -1,7 +1,6 @@
 import { authService } from "../services/authService.js";
 
 export const authController = {
-  // Cadastro de usuário
   async register(req, res, next) {
     try {
       const { name, email, password } = req.body ?? {};
@@ -22,7 +21,6 @@ export const authController = {
     }
   },
 
-  // Login de usuário
   async login(req, res, next) {
     try {
       const { email, password } = req.body ?? {};
@@ -42,7 +40,27 @@ export const authController = {
     }
   },
 
-  // Recupera os dados do usuário autenticado
+  async claimLegacy(req, res, next) {
+    try {
+      const { name, email, password, claimSecret } = req.body ?? {};
+
+      const result = await authService.claimLegacy({
+        name,
+        email,
+        password,
+        claimSecret,
+      });
+
+      return res.status(200).json({
+        message: "Conta recuperada com sucesso.",
+        user: result.user,
+        token: result.token,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   me(req, res) {
     return res.status(200).json({
       user: req.user,

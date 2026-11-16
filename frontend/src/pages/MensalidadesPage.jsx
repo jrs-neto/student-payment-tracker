@@ -198,7 +198,7 @@ export default function MensalidadesPage() {
 
       if (checkIsMounted() && selectedMonthIdRef.current === monthId) {
         const recordsData = response.data?.records;
-        const summaryData = response.data?.summary;
+        const summaryData = response.data?.financialSummary;
 
         setRecords(Array.isArray(recordsData) ? recordsData : []);
         setSummary({
@@ -653,14 +653,27 @@ export default function MensalidadesPage() {
 
   function getStatusBadgeStyle(status) {
     switch (status) {
-      case 'Pago':
+      case 'paid':
         return 'bg-green-100 dark:bg-green-950/60 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800';
-      case 'Pendente':
+      case 'pending':
         return 'bg-yellow-100 dark:bg-yellow-950/60 text-yellow-800 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800';
-      case 'Atrasado':
+      case 'overdue':
         return 'bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800';
       default:
         return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-700';
+    }
+  }
+
+  function getStatusLabel(status) {
+    switch (status) {
+      case 'paid':
+        return 'Pago';
+      case 'pending':
+        return 'Pendente';
+      case 'overdue':
+        return 'Atrasado';
+      default:
+        return status;
     }
   }
 
@@ -1180,7 +1193,7 @@ export default function MensalidadesPage() {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                                   <span className={`px-3 py-1 inline-flex items-center justify-center w-32 text-xs leading-5 font-semibold rounded-full ${getStatusBadgeStyle(record.status)}`}>
-                                    {record.status}
+                                    {getStatusLabel(record.status)}
                                   </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

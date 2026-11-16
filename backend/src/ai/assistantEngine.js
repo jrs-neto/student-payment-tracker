@@ -1,7 +1,22 @@
+const MAX_HISTORY_MESSAGES = 20;
+const MAX_MESSAGE_CONTENT_LENGTH = 4000;
+const MAX_AGGREGATE_HISTORY_LENGTH = 80000;
+const MAX_TOOL_CALLS_PER_ROUND = 5;
+const MAX_TOOL_CALL_ID_LENGTH = 128;
+const MAX_TOOL_NAME_LENGTH = 64;
+const MAX_TOOL_ARGUMENTS_LENGTH = 2000;
+const MAX_TOOL_RESULT_STRING_LENGTH = 50000;
+
 function validateHistory(history) {
   if (!Array.isArray(history)) {
     throw new Error("O histórico da conversa é inválido.");
   }
+
+  if (history.length > MAX_HISTORY_MESSAGES) {
+    throw new Error(`O histórico excede o limite máximo de ${MAX_HISTORY_MESSAGES} mensagens.`);
+  }
+
+  let aggregateLength = 0;
 
   for (const message of history) {
     if (
@@ -13,6 +28,16 @@ function validateHistory(history) {
     ) {
       throw new Error("O histórico contém uma mensagem inválida.");
     }
+
+    if (message.content.length > MAX_MESSAGE_CONTENT_LENGTH) {
+      throw new Error(`Uma mensagem do histórico ultrapassa o limite de ${MAX_MESSAGE_CONTENT_LENGTH} caracteres.`);
+    }
+
+    aggregateLength += message.content.length;
+  }
+
+  if (aggregateLength > MAX_AGGREGATE_HISTORY_LENGTH) {
+    throw new Error(`O histórico acumulado ultrapassa o limite máximo de ${MAX_AGGREGATE_HISTORY_LENGTH} caracteres.`);
   }
 
   return history;
@@ -28,18 +53,37 @@ function validateProviderResponse(response) {
     throw new Error("O provedor retornou uma resposta inválida.");
   }
 
+  if (response.toolCalls.length > MAX_TOOL_CALLS_PER_ROUND) {
+    throw new Error(`O provedor excedeu o limite de ${MAX_TOOL_CALLS_PER_ROUND} chamadas de ferramentas por rodada.`);
+  }
+
   for (const call of response.toolCalls) {
     if (
       !call ||
       typeof call !== "object" ||
       typeof call.id !== "string" ||
       !call.id.trim() ||
+      call.id.trim().length > MAX_TOOL_CALL_ID_LENGTH ||
       typeof call.name !== "string" ||
       !call.name.trim() ||
+      call.name.trim().length > MAX_TOOL_NAME_LENGTH ||
       (call.arguments !== undefined &&
         (call.arguments === null || typeof call.arguments !== "object" || Array.isArray(call.arguments)))
     ) {
       throw new Error("O provedor retornou uma chamada de ferramenta inválida.");
+    }
+
+    try {
+      const argsLength = JSON.stringify(call.arguments ?? {}).length;
+      if (argsLength > MAX_TOOL_ARGUMENTS_LENGTH) {
+        throw new Error("Os argumentos da chamada de ferramenta excedem o limite de tamanho permitido.");
+      }
+    } catch (serializeError) {
+      throw new Error(
+        serializeError.message.includes("excedem o limite")
+          ? serializeError.message
+          : "Os argumentos da ferramenta não puderam ser serializados.",
+      );
     }
   }
 
@@ -112,7 +156,18 @@ export async function runAssistant({ provider, prompt, history = [], toolDeclara
       response.toolCalls.map(async (call) => {
         try {
           // O userId vem exclusivamente do contexto autenticado.
-          const result = await executeTool(call.name, call.arguments ?? {}, userId);
+          let result = await executeTool(call.name, call.arguments ?? {}, userId);
+
+          // Valida se o resultado gerado pela ferramenta possui tamanho aceitável
+          const serializedResult = JSON.stringify(result);
+          if (serializedResult.length > MAX_TOOL_RESULT_STRING_LENGTH) {
+            console.warn(
+              `Resultado da ferramenta ${call.name} excedeu o limite máximo (${serializedResult.length} caracteres). Retornando aviso seguro.`
+            );
+            result = {
+              error: "O volume de dados retornado pela consulta excedeu o limite seguro.",
+            };
+          }
 
           return {
             callId: call.id,

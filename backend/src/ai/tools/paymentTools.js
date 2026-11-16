@@ -97,6 +97,13 @@ function getMonthName(month) {
   }).format(new Date(Date.UTC(2026, month - 1, 15)));
 }
 
+// Mapeamento explícito entre os status apresentados ao Gemini e os códigos internos do backend.
+const STATUS_MAP = {
+  Pago: "paid",
+  Pendente: "pending",
+  Atrasado: "overdue",
+};
+
 // Executa as ferramentas autorizadas pelo backend.
 export async function executePaymentTool(name, args = {}, userId) {
   validateUserId(userId);
@@ -104,6 +111,13 @@ export async function executePaymentTool(name, args = {}, userId) {
 
   switch (name) {
     case "getMonthlyFinancialSummary": {
+      const allowedKeys = ["year", "month"];
+      const unexpectedKeys = Object.keys(args).filter((key) => !allowedKeys.includes(key));
+
+      if (unexpectedKeys.length > 0) {
+        throw new Error(`Parâmetros inesperados para getMonthlyFinancialSummary: ${unexpectedKeys.join(", ")}`);
+      }
+
       const currentDate = getCurrentReferenceDate();
 
       const year = args.year ?? currentDate.year;
@@ -135,6 +149,13 @@ export async function executePaymentTool(name, args = {}, userId) {
     }
 
     case "getMonthlyPaymentsByStatus": {
+      const allowedKeys = ["year", "month", "status"];
+      const unexpectedKeys = Object.keys(args).filter((key) => !allowedKeys.includes(key));
+
+      if (unexpectedKeys.length > 0) {
+        throw new Error(`Parâmetros inesperados para getMonthlyPaymentsByStatus: ${unexpectedKeys.join(", ")}`);
+      }
+
       const currentDate = getCurrentReferenceDate();
 
       const year = args.year ?? currentDate.year;
@@ -167,7 +188,9 @@ export async function executePaymentTool(name, args = {}, userId) {
       const monthData = await monthlyService.getMonthRecords(referenceMonth.id, userId);
 
       const records =
-        status === "Todos" ? monthData.records : monthData.records.filter((record) => record.status === status);
+        status === "Todos"
+          ? monthData.records
+          : monthData.records.filter((record) => record.status === STATUS_MAP[status]);
 
       const totalCents = records.reduce((total, record) => total + Math.round(Number(record.amount) * 100), 0);
 

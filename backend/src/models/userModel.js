@@ -1,7 +1,6 @@
 import pool from "../config/database.js";
 
 export const userModel = {
-  // Localiza um usuário pelo e-mail, incluindo o hash da senha.
   async findByEmail(email) {
     const query = `
       SELECT
@@ -22,7 +21,6 @@ export const userModel = {
     return rows[0] ?? null;
   },
 
-  // Localiza um usuário pelo ID, sem retornar o hash da senha.
   async findById(id) {
     const query = `
       SELECT
@@ -42,7 +40,6 @@ export const userModel = {
     return rows[0] ?? null;
   },
 
-  // Cria uma nova conta.
   async create({ name, email, passwordHash }) {
     const query = `
       INSERT INTO users (
@@ -65,5 +62,74 @@ export const userModel = {
     const { rows } = await pool.query(query, values);
 
     return rows[0];
+  },
+
+  async claimLegacy({ name, email, passwordHash }) {
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const legacyResult = await client.query(
+        `
+          SELECT
+            id,
+            password_hash,
+            google_id,
+            claimed_at
+          FROM users
+          WHERE email = $1
+          FOR UPDATE;
+        `,
+        ["legado@studenttracker.local"],
+      );
+
+      const legacyUser = legacyResult.rows[0];
+
+      if (
+        !legacyUser ||
+        legacyUser.password_hash !== null ||
+        legacyUser.google_id !== null ||
+        legacyUser.claimed_at !== null
+      ) {
+        await client.query("ROLLBACK");
+        return null;
+      }
+
+      const updateResult = await client.query(
+        `
+          UPDATE users
+          SET
+            name = $1,
+            email = $2,
+            password_hash = $3,
+            claimed_at = CURRENT_TIMESTAMP
+          WHERE id = $4
+            AND claimed_at IS NULL
+          RETURNING
+            id,
+            name,
+            email,
+            google_id,
+            created_at,
+            claimed_at;
+        `,
+        [name, email, passwordHash, legacyUser.id],
+      );
+
+      if (updateResult.rowCount !== 1) {
+        await client.query("ROLLBACK");
+        return null;
+      }
+
+      await client.query("COMMIT");
+
+      return updateResult.rows[0];
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
   },
 };
