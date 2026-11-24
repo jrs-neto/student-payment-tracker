@@ -75,6 +75,7 @@ function validateProviderResponse(response) {
 
     try {
       const argsLength = JSON.stringify(call.arguments ?? {}).length;
+
       if (argsLength > MAX_TOOL_ARGUMENTS_LENGTH) {
         throw new Error("Os argumentos da chamada de ferramenta excedem o limite de tamanho permitido.");
       }
@@ -158,12 +159,14 @@ export async function runAssistant({ provider, prompt, history = [], toolDeclara
           // O userId vem exclusivamente do contexto autenticado.
           let result = await executeTool(call.name, call.arguments ?? {}, userId);
 
-          // Valida se o resultado gerado pela ferramenta possui tamanho aceitável
+          // Valida se o resultado gerado pela ferramenta possui tamanho aceitável.
           const serializedResult = JSON.stringify(result);
+
           if (serializedResult.length > MAX_TOOL_RESULT_STRING_LENGTH) {
             console.warn(
-              `Resultado da ferramenta ${call.name} excedeu o limite máximo (${serializedResult.length} caracteres). Retornando aviso seguro.`
+              `Resultado da ferramenta ${call.name} excedeu o limite máximo (${serializedResult.length} caracteres). Retornando aviso seguro.`,
             );
+
             result = {
               error: "O volume de dados retornado pela consulta excedeu o limite seguro.",
             };
@@ -196,6 +199,11 @@ export async function runAssistant({ provider, prompt, history = [], toolDeclara
         tools: toolDeclarations,
       }),
     );
+  }
+
+  // Permite retornar a resposta final recebida após a quinta rodada.
+  if (response.toolCalls.length === 0) {
+    return response.text;
   }
 
   throw new Error("O limite de execuções de ferramentas foi atingido.");

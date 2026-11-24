@@ -13,13 +13,18 @@ export const paymentToolDeclarations = [
       properties: {
         year: {
           type: "integer",
+          minimum: 2000,
+          maximum: 2100,
           description: "Ano de referência. Se omitido, utiliza o ano atual.",
         },
         month: {
           type: "integer",
+          minimum: 1,
+          maximum: 12,
           description: "Mês de referência, de 1 a 12. Se omitido, utiliza o mês atual.",
         },
       },
+      additionalProperties: false,
     },
   },
   {
@@ -32,10 +37,14 @@ export const paymentToolDeclarations = [
       properties: {
         year: {
           type: "integer",
+          minimum: 2000,
+          maximum: 2100,
           description: "Ano de referência. Se omitido, utiliza o ano atual.",
         },
         month: {
           type: "integer",
+          minimum: 1,
+          maximum: 12,
           description: "Mês de referência, de 1 a 12. Se omitido, utiliza o mês atual.",
         },
         status: {
@@ -45,6 +54,7 @@ export const paymentToolDeclarations = [
         },
       },
       required: ["status"],
+      additionalProperties: false,
     },
   },
 ];

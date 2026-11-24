@@ -2,11 +2,7 @@ import { executePaymentTool } from "../../src/ai/tools/paymentTools.js";
 import { executeStudentTool } from "../../src/ai/tools/studentTools.js";
 import { executeTool } from "../../src/ai/tools/toolRegistry.js";
 import { runAssistant } from "../../src/ai/assistantEngine.js";
-import {
-  createConversation,
-  getConversation,
-  addConversationMessage,
-} from "../../src/ai/conversationStore.js";
+import { createConversation, getConversation, addConversationMessage } from "../../src/ai/conversationStore.js";
 import { createAssistantService } from "../../src/services/assistantService.js";
 import { monthlyModel } from "../../src/models/monthlyModel.js";
 import { monthlyService } from "../../src/services/monthlyService.js";
@@ -75,11 +71,7 @@ monthlyService.getMonthRecords = async (monthId, userId) => {
 
 try {
   // 1.1 Pago -> paid
-  const resPago = await executePaymentTool(
-    "getMonthlyPaymentsByStatus",
-    { year: 2026, month: 5, status: "Pago" },
-    1,
-  );
+  const resPago = await executePaymentTool("getMonthlyPaymentsByStatus", { year: 2026, month: 5, status: "Pago" }, 1);
   assert(
     resPago.found === true &&
       resPago.total_records === 2 &&
@@ -117,15 +109,9 @@ try {
   );
 
   // 1.4 Todos -> todos os registros
-  const resTodos = await executePaymentTool(
-    "getMonthlyPaymentsByStatus",
-    { year: 2026, month: 5, status: "Todos" },
-    1,
-  );
+  const resTodos = await executePaymentTool("getMonthlyPaymentsByStatus", { year: 2026, month: 5, status: "Todos" }, 1);
   assert(
-    resTodos.found === true &&
-      resTodos.total_records === 4 &&
-      resTodos.total_amount === "750.00",
+    resTodos.found === true && resTodos.total_records === 4 && resTodos.total_amount === "750.00",
     "Status 'Todos' retorna todos os registros e soma correta",
   );
 
@@ -241,9 +227,7 @@ await assertThrowsAsync(
 );
 
 // 4.2 Mensagem individual no histórico ultrapassando 4000 caracteres
-const hugeMessageHistory = [
-  { role: "user", content: "A".repeat(4001) },
-];
+const hugeMessageHistory = [{ role: "user", content: "A".repeat(4001) }];
 
 await assertThrowsAsync(
   () =>
@@ -259,24 +243,24 @@ await assertThrowsAsync(
   "assistantEngine rejeita mensagem individual do histórico com mais de 4000 caracteres",
 );
 
-// 4.3 Histórico com tamanho agregado ultrapassando 80000 caracteres
-const aggregateOversizedHistory = Array.from({ length: 20 }, () => ({
-  role: "user",
-  content: "B".repeat(4001), // total > 80000
+// 4.3 Histórico no limite máximo permitido
+const maximumHistory = Array.from({ length: 20 }, (_, i) => ({
+  role: i % 2 === 0 ? "user" : "assistant",
+  content: "A".repeat(4000),
 }));
 
-await assertThrowsAsync(
-  () =>
-    runAssistant({
-      provider: mockProvider,
-      prompt: "Olá",
-      history: aggregateOversizedHistory,
-      toolDeclarations: [],
-      executeTool: async () => {},
-      userId: 1,
-    }),
-  "ultrapassa o limite",
-  "assistantEngine rejeita histórico agregado maior que o limite configurado",
+const maximumHistoryResult = await runAssistant({
+  provider: mockProvider,
+  prompt: "Olá",
+  history: maximumHistory,
+  toolDeclarations: [],
+  executeTool: async () => {},
+  userId: 1,
+});
+
+assert(
+  maximumHistoryResult === "Resposta simulada",
+  "assistantEngine aceita histórico com 20 mensagens de 4000 caracteres",
 );
 
 // 4.4 Provedor retornando mais de 5 chamadas de ferramentas por rodada
@@ -339,9 +323,7 @@ const providerOversizedArgs = {
   startConversation: async () => ({
     conversationId: "conv-123",
     text: "",
-    toolCalls: [
-      { id: "call-1", name: "getStudentCount", arguments: { payload: "X".repeat(2500) } },
-    ],
+    toolCalls: [{ id: "call-1", name: "getStudentCount", arguments: { payload: "X".repeat(2500) } }],
   }),
   continueConversation: async () => ({ conversationId: "conv-123", text: "", toolCalls: [] }),
 };
@@ -387,8 +369,100 @@ const resSafe = await runAssistant({
 
 assert(
   toolResultSafeHandling && resSafe === "Tratamento concluído com segurança",
-  "Resultado de ferramenta excessivamente grande é truncado de maneira segura",
+  "Resultado de ferramenta excessivamente grande é substituído por aviso seguro",
 );
+
+// 4.8 Resposta final recebida após a quinta rodada de ferramentas
+let finalResponseRounds = 0;
+
+const providerFinalAfterFifthRound = {
+  startConversation: async () => ({
+    conversationId: "conv-final",
+    text: "",
+    toolCalls: [{ id: "call-0", name: "getStudentCount", arguments: {} }],
+  }),
+
+  continueConversation: async () => {
+    finalResponseRounds++;
+
+    if (finalResponseRounds === 5) {
+      return {
+        conversationId: "conv-final",
+        text: "Resposta final após a quinta rodada",
+        toolCalls: [],
+      };
+    }
+
+    return {
+      conversationId: "conv-final",
+      text: "",
+      toolCalls: [
+        {
+          id: `call-${finalResponseRounds}`,
+          name: "getStudentCount",
+          arguments: {},
+        },
+      ],
+    };
+  },
+};
+
+const finalResponseResult = await runAssistant({
+  provider: providerFinalAfterFifthRound,
+  prompt: "Consulte os alunos",
+  history: [],
+  toolDeclarations: [],
+  executeTool: async () => ({ totalStudents: 8 }),
+  userId: 1,
+});
+
+assert(
+  finalResponseRounds === 5 && finalResponseResult === "Resposta final após a quinta rodada",
+  "assistantEngine aceita resposta final recebida após a quinta rodada",
+);
+
+// 4.9 Rejeição de ferramentas solicitadas além do limite de cinco rodadas
+let exceededLimitRounds = 0;
+
+const providerExceedingToolLimit = {
+  startConversation: async () => ({
+    conversationId: "conv-limit",
+    text: "",
+    toolCalls: [{ id: "limit-0", name: "getStudentCount", arguments: {} }],
+  }),
+
+  continueConversation: async () => {
+    exceededLimitRounds++;
+
+    return {
+      conversationId: "conv-limit",
+      text: "",
+      toolCalls: [
+        {
+          id: `limit-${exceededLimitRounds}`,
+          name: "getStudentCount",
+          arguments: {},
+        },
+      ],
+    };
+  },
+};
+
+await assertThrowsAsync(
+  () =>
+    runAssistant({
+      provider: providerExceedingToolLimit,
+      prompt: "Consulte os alunos",
+      history: [],
+      toolDeclarations: [],
+      executeTool: async () => ({ totalStudents: 8 }),
+      userId: 1,
+    }),
+  "O limite de execuções de ferramentas foi atingido.",
+  "assistantEngine rejeita novas chamadas após cinco rodadas de ferramentas",
+);
+
+assert(exceededLimitRounds === 5, "assistantEngine não executa uma sexta rodada de ferramentas");
 
 // ----------------------------------------------------------------------
 // 5. ISOLAMENTO E EXPIRAÇÃO DE CONVERSAS EM conversationStore.js
