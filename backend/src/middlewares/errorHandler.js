@@ -26,6 +26,10 @@ export const errorHandler = (err, req, res, next) => {
   };
 
   let message;
+  const errorCode =
+    err.isSafe === true && err.code === "INVALID_PASSWORD"
+      ? err.code
+      : undefined;
 
   // Erros 4xx são expostos somente se estiverem explicitamente marcados como seguros
   if (
@@ -52,6 +56,7 @@ export const errorHandler = (err, req, res, next) => {
     error: {
       status: statusCode,
       message,
+      ...(errorCode ? { code: errorCode } : {}),
     },
   });
 };

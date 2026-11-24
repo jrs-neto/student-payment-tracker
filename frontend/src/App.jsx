@@ -6,6 +6,7 @@ import {
   LogOut,
   LoaderCircle,
   AlertCircle,
+  Settings,
 } from "lucide-react";
 
 import AlunosPage from "./pages/AlunosPage";
@@ -14,11 +15,15 @@ import AssistantPage from "./pages/AssistantPage";
 
 import LoginPage from "./components/LoginPage";
 import RegisterPage from "./components/RegisterPage";
+import AccountSettingsPage from "./components/AccountSettingsPage";
 
 import { authService } from "./services/authService";
+import { resetDemoData } from "./services/demoDataApi";
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isDemo, setIsDemo] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const [verifying, setVerifying] = useState(true);
   const [verificationError, setVerificationError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -61,16 +66,19 @@ export default function App() {
           setIsAuthenticated(false);
           setVerifying(false);
           setVerificationError(false);
+          setCurrentUser(null);
         }
 
         return;
       }
 
       try {
-        await authService.getMe();
+        const session = await authService.getMe();
 
         if (isMounted) {
           setIsAuthenticated(true);
+          setIsDemo(session.user?.isDemo === true);
+          setCurrentUser(session.user ?? null);
           setVerificationError(false);
         }
       } catch (err) {
@@ -81,6 +89,10 @@ export default function App() {
         if (status === 401) {
           authService.logout();
           setIsAuthenticated(false);
+          setIsDemo(false);
+          setCurrentUser(null);
+          setAuthView("login");
+          setActiveTab("alunos");
           setVerificationError(false);
         } else {
           // Falhas de conexão ou erros do servidor não invalidam
@@ -105,7 +117,10 @@ export default function App() {
   useEffect(() => {
     function handleUnauthorized() {
       authService.logout();
+      resetDemoData();
       setIsAuthenticated(false);
+      setIsDemo(false);
+      setCurrentUser(null);
       setAuthView("login");
       setActiveTab("alunos");
     }
@@ -123,24 +138,74 @@ export default function App() {
     );
   };
 
-  const handleLoginSuccess = () => {
+  const handleLoginSuccess = async () => {
+    const session = await authService.getMe();
+    if (session.user?.isDemo !== true) resetDemoData();
     setVerificationError(false);
     setAuthView("login");
+    setIsDemo(session.user?.isDemo === true);
+    setCurrentUser(session.user ?? null);
+    setActiveTab("alunos");
     setIsAuthenticated(true);
   };
 
-  const handleRegisterSuccess = () => {
+  const handleRegisterSuccess = async () => {
+    setVerifying(true);
     setVerificationError(false);
-    setAuthView("login");
-    setIsAuthenticated(true);
+
+    try {
+      const session = await authService.getMe();
+
+      if (session.user?.isDemo !== true) {
+        resetDemoData();
+      }
+
+      setAuthView("login");
+      setActiveTab("alunos");
+      setIsDemo(session.user?.isDemo === true);
+      setCurrentUser(session.user ?? null);
+      setIsAuthenticated(true);
+    } catch (err) {
+      const status = err.response?.status;
+
+      if (status === 401) {
+        authService.logout();
+        setIsAuthenticated(false);
+        setIsDemo(false);
+        setCurrentUser(null);
+        setAuthView("login");
+        setActiveTab("alunos");
+        setVerificationError(false);
+      } else {
+        // A conta foi criada, mas não conseguimos confirmar a sessão.
+        // Mantemos o token para permitir uma nova tentativa.
+        setIsAuthenticated(false);
+        setIsDemo(false);
+        setCurrentUser(null);
+        setVerificationError(true);
+      }
+    } finally {
+      setVerifying(false);
+    }
   };
 
   const handleLogout = () => {
     authService.logout();
+    resetDemoData();
     setIsAuthenticated(false);
+    setIsDemo(false);
+    setCurrentUser(null);
     setAuthView("login");
     setActiveTab("alunos");
   };
+
+  const handleGoogleLinked = useCallback((linkedUser) => {
+    setCurrentUser((user) => ({
+      ...(user ?? {}),
+      ...linkedUser,
+      googleLinked: Boolean(linkedUser?.google_id),
+    }));
+  }, []);
 
   const getTabClass = (tab) =>
     `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium cursor-pointer transition-colors ${activeTab === tab
@@ -253,6 +318,16 @@ export default function App() {
               <Bot size={17} />
               Assistente IA
             </button>
+
+            {!isDemo && (
+              <button
+                onClick={() => setActiveTab("conta")}
+                className={getTabClass("conta")}
+              >
+                <Settings size={17} />
+                Conta
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -289,10 +364,23 @@ export default function App() {
         </div>
       </nav>
 
+      {isDemo && (
+        <div role="status" className="bg-purple-100 dark:bg-[#38264F] px-4 py-2 text-center text-sm font-medium text-purple-900 dark:text-purple-100">
+          Modo demonstração — alterações temporárias, não são salvas.
+        </div>
+      )}
+
       <main>
-        {activeTab === "alunos" && <AlunosPage />}
-        {activeTab === "mensalidades" && <MensalidadesPage />}
+        {activeTab === "alunos" && <AlunosPage demoMode={isDemo} />}
+        {activeTab === "mensalidades" && <MensalidadesPage demoMode={isDemo} />}
         {activeTab === "assistente" && <AssistantPage />}
+        {activeTab === "conta" && !isDemo && (
+          <AccountSettingsPage
+            user={currentUser}
+            isDemo={isDemo}
+            onGoogleLinked={handleGoogleLinked}
+          />
+        )}
       </main>
     </div>
   );

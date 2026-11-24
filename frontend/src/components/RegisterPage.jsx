@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { UserPlus, LoaderCircle, AlertCircle } from "lucide-react";
+
 import { authService } from "../services/authService";
+import GoogleSignInButton from "./GoogleSignInButton";
 
 export default function RegisterPage({
   onRegisterSuccess,
@@ -11,6 +13,7 @@ export default function RegisterPage({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState(null);
 
   async function handleSubmit(e) {
@@ -44,13 +47,13 @@ export default function RegisterPage({
     try {
       setLoading(true);
 
-      await authService.register(
+      const result = await authService.register(
         normalizedName,
         normalizedEmail,
-        password
+        password,
       );
 
-      onRegisterSuccess();
+      await onRegisterSuccess(result.user);
     } catch (err) {
       const message =
         err.response?.data?.error?.message ||
@@ -62,6 +65,46 @@ export default function RegisterPage({
       setLoading(false);
     }
   }
+
+  const handleGoogleCredential = useCallback(
+    async (idToken) => {
+      setError(null);
+
+      try {
+        setGoogleLoading(true);
+
+        const result = await authService.googleLogin(idToken);
+
+        await onRegisterSuccess(result.user);
+      } catch (err) {
+        if (!err.response) {
+          setError(
+            "Não foi possível conectar ao servidor. Verifique sua conexão.",
+          );
+        } else if (err.response.status >= 500) {
+          setError(
+            "Ocorreu uma instabilidade no servidor. Tente novamente em instantes.",
+          );
+        } else {
+          const message =
+            err.response?.data?.error?.message ||
+            err.response?.data?.message ||
+            "Não foi possível criar sua conta com Google.";
+
+          setError(message);
+        }
+      } finally {
+        setGoogleLoading(false);
+      }
+    },
+    [onRegisterSuccess],
+  );
+
+  const handleGoogleError = useCallback((message) => {
+    setError(message);
+  }, []);
+
+  const isLoading = loading || googleLoading;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--bg-main)] text-[var(--text-main)] px-4 py-8 transition-colors">
@@ -94,7 +137,7 @@ export default function RegisterPage({
         <form
           onSubmit={handleSubmit}
           className="space-y-4"
-          aria-busy={loading}
+          aria-busy={isLoading}
         >
           <div>
             <label
@@ -113,7 +156,7 @@ export default function RegisterPage({
               autoComplete="name"
               maxLength={100}
               required
-              disabled={loading}
+              disabled={isLoading}
               className="w-full bg-[var(--bg-main)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] disabled:opacity-60"
             />
           </div>
@@ -135,7 +178,7 @@ export default function RegisterPage({
               autoComplete="email"
               maxLength={150}
               required
-              disabled={loading}
+              disabled={isLoading}
               className="w-full bg-[var(--bg-main)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] disabled:opacity-60"
             />
           </div>
@@ -157,7 +200,7 @@ export default function RegisterPage({
               autoComplete="new-password"
               minLength={8}
               required
-              disabled={loading}
+              disabled={isLoading}
               className="w-full bg-[var(--bg-main)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] disabled:opacity-60"
             />
           </div>
@@ -179,14 +222,14 @@ export default function RegisterPage({
               autoComplete="new-password"
               minLength={8}
               required
-              disabled={loading}
+              disabled={isLoading}
               className="w-full bg-[var(--bg-main)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5CF6] disabled:opacity-60"
             />
           </div>
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={isLoading}
             className="w-full flex items-center justify-center gap-2 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white py-3 rounded-lg text-sm font-semibold transition shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
@@ -200,6 +243,37 @@ export default function RegisterPage({
           </button>
         </form>
 
+        {/* Separador */}
+        <div className="flex items-center gap-4 my-5">
+          <div className="flex-1 h-px bg-[var(--border-color)]" />
+
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            ou continue com
+          </span>
+
+          <div className="flex-1 h-px bg-[var(--border-color)]" />
+        </div>
+
+        {/* Cadastro com Google */}
+        {googleLoading ? (
+          <div className="w-full flex items-center justify-center gap-2 py-3">
+            <LoaderCircle
+              size={18}
+              className="animate-spin text-[#8B5CF6]"
+            />
+
+            <span className="text-sm text-gray-600 dark:text-gray-300">
+              Criando conta com Google...
+            </span>
+          </div>
+        ) : (
+          <GoogleSignInButton
+            onCredential={handleGoogleCredential}
+            onError={handleGoogleError}
+            disabled={loading}
+          />
+        )}
+
         <div className="mt-6 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-sm">
           <span className="text-gray-600 dark:text-gray-400">
             Já tem uma conta?
@@ -208,7 +282,7 @@ export default function RegisterPage({
           <button
             type="button"
             onClick={onSwitchToLogin}
-            disabled={loading}
+            disabled={isLoading}
             className="text-[#8B5CF6] font-semibold hover:underline cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Entrar

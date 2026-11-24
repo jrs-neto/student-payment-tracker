@@ -18,6 +18,7 @@ import {
   Search
 } from 'lucide-react';
 import api from '../services/api';
+import { getDemoApi } from '../services/demoDataApi';
 
 const nomesMeses = {
   1: 'Janeiro',
@@ -34,7 +35,8 @@ const nomesMeses = {
   12: 'Dezembro'
 };
 
-export default function MensalidadesPage() {
+export default function MensalidadesPage({ demoMode = false }) {
+  const dataApi = demoMode ? getDemoApi(api) : api;
   const [months, setMonths] = useState([]);
   const [loadingMonths, setLoadingMonths] = useState(true);
   const [errorMonths, setErrorMonths] = useState(null);
@@ -158,7 +160,7 @@ export default function MensalidadesPage() {
       try {
         setErrorMonths(null);
         setLoadingMonths(true);
-        const response = await api.get('/months');
+        const response = await dataApi.get('/months');
         const data = Array.isArray(response.data) ? response.data : [];
         setMonths(data);
 
@@ -194,7 +196,7 @@ export default function MensalidadesPage() {
     try {
       setErrorRecords(null);
       setLoadingRecords(true);
-      const response = await api.get(`/months/${monthId}/records`);
+      const response = await dataApi.get(`/months/${monthId}/records`);
 
       if (checkIsMounted() && selectedMonthIdRef.current === monthId) {
         const recordsData = response.data?.records;
@@ -245,7 +247,7 @@ export default function MensalidadesPage() {
     async function fetchStudents() {
       try {
         setLoadingStudents(true);
-        const response = await api.get('/students');
+        const response = await dataApi.get('/students');
         const data = Array.isArray(response.data) ? response.data : [];
         const sortedStudents = data
           .filter((student) => student.is_active === true)
@@ -324,7 +326,7 @@ export default function MensalidadesPage() {
     setIsSaving(true);
 
     try {
-      await api.post(`/months/${selectedMonth.id}/records`, payload);
+      await dataApi.post(`/months/${selectedMonth.id}/records`, payload);
 
       if (selectedMonthIdRef.current === monthIdAtStart) {
         await fetchRecordsData(selectedMonth.id);
@@ -396,7 +398,7 @@ export default function MensalidadesPage() {
     setIsUpdatingRecord(true);
 
     try {
-      await api.put(`/months/records/${recordToEdit.id}`, payload);
+      await dataApi.put(`/months/records/${recordToEdit.id}`, payload);
 
       if (selectedMonthIdRef.current === monthIdAtStart) {
         await fetchRecordsData(selectedMonth.id);
@@ -454,10 +456,10 @@ export default function MensalidadesPage() {
     setIsCopying(true);
 
     try {
-      const response = await api.post('/months/copy', payload);
+      const response = await dataApi.post('/months/copy', payload);
       const newMonth = response.data?.target_reference_month;
 
-      const monthsResponse = await api.get('/months');
+      const monthsResponse = await dataApi.get('/months');
       const updatedMonths = Array.isArray(monthsResponse.data) ? monthsResponse.data : [];
       setMonths(updatedMonths);
 
@@ -497,14 +499,14 @@ export default function MensalidadesPage() {
     setActionMessage(null);
 
     try {
-      await api.delete(`/months/${selectedMonth.id}`);
+      await dataApi.delete(`/months/${selectedMonth.id}`);
 
       setActionMessage('Mês de referência e mensalidades excluídos com sucesso.');
       setTimeout(() => {
         setActionMessage(null);
       }, 4000);
 
-      const monthsResponse = await api.get('/months');
+      const monthsResponse = await dataApi.get('/months');
       const updatedMonths = Array.isArray(monthsResponse.data) ? monthsResponse.data : [];
       setMonths(updatedMonths);
 
@@ -572,7 +574,7 @@ export default function MensalidadesPage() {
     setActionError(null);
 
     try {
-      await api.patch(`/months/records/${record.id}/payment`, {
+      await dataApi.patch(`/months/records/${record.id}/payment`, {
         is_paid: nextIsPaid
       });
 
@@ -613,7 +615,7 @@ export default function MensalidadesPage() {
     setActionError(null);
 
     try {
-      await api.delete(`/months/records/${record.id}`);
+      await dataApi.delete(`/months/records/${record.id}`);
 
       if (selectedMonthIdRef.current === monthIdAtStart) {
         await fetchRecordsData(selectedMonthIdRef.current);

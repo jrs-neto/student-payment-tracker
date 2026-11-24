@@ -5,6 +5,7 @@ function unauthorized(res) {
   return res.status(401).json({
     error: {
       status: 401,
+      code: "AUTH_REQUIRED",
       message: "Autenticação necessária ou token inválido.",
     },
   });
@@ -53,10 +54,16 @@ export async function authMiddleware(req, res, next) {
       return unauthorized(res);
     }
 
+    if (user.is_demo === true && process.env.DEMO_ENABLED !== "true") {
+      return unauthorized(res);
+    }
+
     req.user = {
       id: user.id,
       name: user.name,
       email: user.email,
+      isDemo: user.is_demo === true,
+      googleLinked: Boolean(user.google_id),
     };
 
     next();

@@ -1,10 +1,21 @@
 # API de Controle de Mensalidades Escolares
 
+## Conta pública de demonstração
+
+1. Aplique `database/V6.0__add_demo_account_flag.sql` no banco antes de publicar o backend atualizado.
+2. Configure `DEMO_ACCOUNT_EMAIL` e uma senha forte `DEMO_ACCOUNT_PASSWORD` no ambiente do backend. Nunca configure esses valores no frontend.
+3. Execute o provisionador apenas no banco escolhido para a demonstração, com `DEMO_PROVISION_CONFIRM=YES npm run provision:demo`. Ele cria uma conta nova e 8 alunos, 3 meses e 24 mensalidades fictícias em uma transação. Se o e-mail já existir, aborta sem alterar registros.
+4. Configure `DEMO_ENABLED=true` para habilitar `POST /api/auth/demo`; qualquer outro valor desativa o acesso. O endpoint tem limite de 20 requisições por hora por IP. Para desligar, defina `DEMO_ENABLED=false`.
+
+O middleware busca `is_demo` no banco a cada requisição autenticada. Rotas mutáveis de alunos e mensalidades respondem HTTP 403 para essa conta. As consultas e ferramentas da assistente continuam filtradas pelo `user_id` autenticado. A conta e seus dados são isolados dos demais usuários. A migração e o provisionador não foram executados contra nenhum banco neste trabalho.
+
+O indicador é uma adição aditiva: usuários existentes recebem `is_demo = false`. Preserve os segredos atuais e configure as variáveis separadamente em cada ambiente.
+
 Backend para gerenciamento de alunos, meses de referência e registros de mensalidades escolares, desenvolvido com Node.js, Express e PostgreSQL sem ORM.
 
 ## 🚀 Requisitos e Tecnologias
 
-* **Node.js** (v18+ recomendado)
+* **Node.js** (v22 ou superior; exigido por `package.json`)
 * **PostgreSQL**
 * **ES Modules** (`"type": "module"` no `package.json`)
 
@@ -22,16 +33,13 @@ npm install
 
 ### 2. Variáveis de Ambiente
 
-Crie um arquivo `.env` na raiz do backend configurando as credenciais de acesso ao PostgreSQL e a porta do servidor:
+Use `backend/.env.example` como referência para o ambiente do servidor e `frontend/.env.example` para o build do frontend. Os exemplos não contêm credenciais. Configure os valores reais apenas no ambiente de execução ou em um arquivo `.env` local, nunca no repositório.
 
-```env
-PORT=3000
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=seu_usuario
-DB_PASSWORD=sua_senha
-DB_NAME=nome_do_banco
-```
+**Exclusivas do backend:** `DATABASE_URL` ou as variáveis `DB_*`, `DB_SSL`, `JWT_SECRET`, `LEGACY_CLAIM_SECRET` (somente se o fluxo de reivindicação legado estiver habilitado), `GOOGLE_CLIENT_ID`, `GEMINI_API_KEY` (se o assistente estiver habilitado), `PORT`, `FRONTEND_URL` e variáveis `DEMO_*`. `JWT_SECRET` deve ter pelo menos 32 caracteres. `DEMO_ACCOUNT_PASSWORD` e `DEMO_PROVISION_CONFIRM` são usadas apenas pelo provisionador no backend.
+
+**Expostas no bundle do frontend:** `VITE_GOOGLE_CLIENT_ID` e `VITE_API_URL` são configurações públicas. O client ID do Google identifica a aplicação e deve ser configurado também como `GOOGLE_CLIENT_ID` no backend. `VITE_API_URL` é opcional; vazio usa `/api` na mesma origem. Nunca coloque senhas, chaves de API, segredos JWT ou credenciais de banco em variáveis `VITE_*`, pois seus valores são incorporados ao bundle público.
+
+Configure `FRONTEND_URL` com a origem real do frontend em produção e cadastre a mesma origem como origem JavaScript autorizada no Google Cloud Console.
 
 ### 3. Executando o Servidor
 

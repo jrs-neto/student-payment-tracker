@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 
-export default function AlunoModal({ isOpen, onClose, onSuccess, alunoParaEditar }) {
+export default function AlunoModal({ isOpen, onClose, onSuccess, alunoParaEditar, apiClient = api }) {
   const [name, setName] = useState('');
   const [guardianName, setGuardianName] = useState('');
   const [guardianEmail, setGuardianEmail] = useState('');
@@ -38,9 +38,9 @@ export default function AlunoModal({ isOpen, onClose, onSuccess, alunoParaEditar
       };
 
       if (isEditing) {
-        await api.put(`/students/${alunoParaEditar.id}`, payload);
+        await apiClient.put(`/students/${alunoParaEditar.id}`, payload);
       } else {
-        await api.post('/students', payload);
+        await apiClient.post('/students', payload);
       }
 
       onSuccess(isEditing ? 'Aluno atualizado com sucesso!' : 'Aluno cadastrado com sucesso!');

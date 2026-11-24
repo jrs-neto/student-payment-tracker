@@ -33,13 +33,25 @@ api.interceptors.response.use(
     const status = error.response?.status;
     const requestUrl = error.config?.url || "";
 
-    const isLoginRoute = requestUrl.includes("/auth/login");
-    const isRegisterRoute = requestUrl.includes("/auth/register");
-    const isMeRoute = requestUrl.includes("/auth/me");
+    const normalizedRequestUrl = requestUrl.split("?")[0].replace(/\/+$/, "");
+    const isLoginRoute = normalizedRequestUrl === "/auth/login";
+    const isRegisterRoute = normalizedRequestUrl === "/auth/register";
+    const isGoogleRoute = normalizedRequestUrl === "/auth/google";
+    const isGoogleLinkRoute = normalizedRequestUrl === "/auth/google/link";
 
-    const isPublicAuthRoute = isLoginRoute || isRegisterRoute;
+    const isPublicAuthRoute = isLoginRoute || isRegisterRoute || isGoogleRoute;
+    const googleLinkErrorCode = error.response?.data?.error?.code;
+    const isGoogleLinkAuthRequired =
+      isGoogleLinkRoute && googleLinkErrorCode === "AUTH_REQUIRED";
+    const isGoogleLinkInvalidPassword =
+      isGoogleLinkRoute && googleLinkErrorCode === "INVALID_PASSWORD";
 
-    if (status === 401 && !isPublicAuthRoute) {
+    if (
+      status === 401 &&
+      !isPublicAuthRoute &&
+      (!isGoogleLinkRoute || isGoogleLinkAuthRequired) &&
+      !isGoogleLinkInvalidPassword
+    ) {
       localStorage.removeItem("token");
 
       window.dispatchEvent(new Event("auth:unauthorized"));

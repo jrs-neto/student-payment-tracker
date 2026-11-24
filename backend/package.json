@@ -9,7 +9,9 @@
   },
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "dev": "node --watch src/index.js",
+    "test": "node --test tests/unit/*.js",
+    "provision:demo": "node scripts/provisionDemo.js"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +23,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^8.7.4",
+    "google-auth-library": "^11.3.4",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.13.1"
   }

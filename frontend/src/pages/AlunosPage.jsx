@@ -4,14 +4,17 @@ import {
   Edit3,
   UserCheck,
   UserX,
+  Trash2,
   ChevronRight,
   ChevronDown,
   Users
 } from 'lucide-react';
 import api from '../services/api';
 import AlunoModal from '../components/AlunoModal';
+import { getDemoApi } from '../services/demoDataApi';
 
-export default function AlunosPage() {
+export default function AlunosPage({ demoMode = false }) {
+  const dataApi = demoMode ? getDemoApi(api) : api;
   const [alunos, setAlunos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,7 +27,7 @@ export default function AlunosPage() {
     try {
       setError(null);
       setLoading(true);
-      const response = await api.get('/students');
+      const response = await dataApi.get('/students');
       const data = Array.isArray(response.data) ? response.data : [];
       setAlunos(data);
     } catch (err) {
@@ -53,7 +56,7 @@ export default function AlunosPage() {
     try {
       setError(null);
       const novoStatus = aluno.is_active === false ? true : false;
-      await api.patch(`/students/${aluno.id}/status`, { is_active: novoStatus });
+      await dataApi.patch(`/students/${aluno.id}/status`, { is_active: novoStatus });
       const statusTexto = novoStatus ? 'ativado' : 'inativado';
       setSuccessMessage(`Aluno ${statusTexto} com sucesso!`);
       fetchAlunos();
@@ -62,6 +65,16 @@ export default function AlunosPage() {
       console.error('Erro ao alterar status do aluno:', err);
       const backendMessage = err.response?.data?.error?.message || err.response?.data?.message;
       setError(backendMessage || 'Não foi possível alterar o status do aluno.');
+    }
+  }
+
+  async function handleDeleteStudent(aluno) {
+    if (!demoMode || !window.confirm(`Deseja realmente excluir o aluno ${aluno.name} e suas mensalidades da sessão de demonstração?`)) return;
+    try {
+      await dataApi.delete(`/students/${aluno.id}`);
+      handleSuccessOperation('Aluno excluído com sucesso!');
+    } catch (err) {
+      setError(err.response?.data?.error?.message || 'Não foi possível excluir o aluno.');
     }
   }
 
@@ -190,6 +203,13 @@ export default function AlunosPage() {
                               <UserX size={14} />
                               Inativar
                             </button>
+                            {demoMode && <button
+                              onClick={() => handleDeleteStudent(aluno)}
+                              className="inline-flex items-center gap-1 cursor-pointer text-red-700 dark:text-red-300 hover:text-red-900 dark:hover:text-red-200 bg-red-100 dark:bg-red-950/50 border border-red-300 dark:border-red-800 px-3 py-1.5 rounded-md text-xs font-semibold transition"
+                            >
+                              <Trash2 size={14} />
+                              Excluir
+                            </button>}
                           </td>
                         </tr>
                       ))
@@ -262,6 +282,13 @@ export default function AlunosPage() {
                                 <UserCheck size={14} />
                                 Ativar
                               </button>
+                              {demoMode && <button
+                                onClick={() => handleDeleteStudent(aluno)}
+                                className="inline-flex items-center gap-1 cursor-pointer text-red-700 dark:text-red-300 hover:text-red-900 dark:hover:text-red-200 bg-red-100 dark:bg-red-950/50 border border-red-300 dark:border-red-800 px-3 py-1.5 rounded-md text-xs font-semibold transition"
+                              >
+                                <Trash2 size={14} />
+                                Excluir
+                              </button>}
                             </td>
                           </tr>
                         ))
@@ -280,6 +307,7 @@ export default function AlunosPage() {
           onClose={() => setIsModalOpen(false)}
           onSuccess={handleSuccessOperation}
           alunoParaEditar={alunoEmEdicao}
+          apiClient={dataApi}
         />
       </div>
     </div>
