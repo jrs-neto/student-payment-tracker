@@ -75,4 +75,5 @@ test.after(() => {
   if (originalEnv.enabled === undefined) delete process.env.DEMO_ENABLED; else process.env.DEMO_ENABLED = originalEnv.enabled;
   if (originalEnv.email === undefined) delete process.env.DEMO_ACCOUNT_EMAIL; else process.env.DEMO_ACCOUNT_EMAIL = originalEnv.email;
   if (originalEnv.secret === undefined) delete process.env.JWT_SECRET; else process.env.JWT_SECRET = originalEnv.secret;
+  setTimeout(() => process.exit(0), 50);
 });

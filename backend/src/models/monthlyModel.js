@@ -264,6 +264,41 @@ export const monthlyModel = {
     return result.rows[0];
   },
 
+  // 12.1. Criar mês de referência avulso.
+  async createMonth({ year, month }, userId) {
+    const query = `
+      INSERT INTO reference_months (
+        year,
+        month,
+        user_id
+      )
+      VALUES ($1, $2, $3)
+      RETURNING id, year, month, created_at;
+    `;
+
+    const result = await pool.query(query, [year, month, userId]);
+
+    return result.rows[0];
+  },
+
+  // 12.2. Assegurar a existência da competência de forma atômica e idempotente.
+  async ensureMonthExists(year, month, userId) {
+    const query = `
+      INSERT INTO reference_months (
+        year,
+        month,
+        user_id
+      )
+      VALUES ($1, $2, $3)
+      ON CONFLICT (user_id, year, month) DO NOTHING
+      RETURNING id, year, month, created_at;
+    `;
+
+    const result = await pool.query(query, [year, month, userId]);
+
+    return result.rows[0] || null;
+  },
+
   // 13. Criar registro mensal dentro de uma transação.
   async createRecordWithClient(client, { student_id, reference_month_id, student_name, amount, due_date }, userId) {
     const query = `

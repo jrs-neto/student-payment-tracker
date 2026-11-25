@@ -3,9 +3,21 @@ import { monthlyService } from "../services/monthlyService.js";
 export const monthlyController = {
   async listMonths(req, res, next) {
     try {
-      const months = await monthlyService.listMonths(req.user.id);
+      const months = await monthlyService.listMonths(req.user.id, {
+        isDemo: req.user?.isDemo === true,
+      });
 
       return res.status(200).json(months);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async createMonth(req, res, next) {
+    try {
+      const newMonth = await monthlyService.createMonth(req.body, req.user.id);
+
+      return res.status(201).json(newMonth);
     } catch (error) {
       next(error);
     }

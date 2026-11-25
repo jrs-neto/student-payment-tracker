@@ -131,6 +131,36 @@ export function createDemoApi(sourceApi) {
       return { data: createRecordResponse(record), status: 201 };
     }
 
+    if (path === "/months" || path === "/months/") {
+      const allowedKeys = ["year", "month"];
+      if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+        throw demoError("Dados inválidos.", 400);
+      }
+      const unexpectedKeys = Object.keys(payload).filter((key) => !allowedKeys.includes(key));
+      if (unexpectedKeys.length > 0) {
+        throw demoError("Foram enviados campos não permitidos.", 400);
+      }
+      if (typeof payload.year !== "number" || !Number.isInteger(payload.year) || payload.year < 2000 || payload.year > 2100) {
+        throw demoError("O campo year deve ser um ano válido entre 2000 e 2100.", 400);
+      }
+      if (typeof payload.month !== "number" || !Number.isInteger(payload.month) || payload.month < 1 || payload.month > 12) {
+        throw demoError("O campo month deve ser um mês válido entre 1 e 12.", 400);
+      }
+      const allMonths = await ensureMonths();
+      if (allMonths.some((entry) => Number(entry.year) === payload.year && Number(entry.month) === payload.month)) {
+        throw demoError("Este mês de referência já existe.", 409);
+      }
+      const month = {
+        id: Math.max(0, ...allMonths.map((entry) => Number(entry.id) || 0)) + 1,
+        year: payload.year,
+        month: payload.month,
+        created_at: new Date().toISOString(),
+      };
+      months = [...allMonths, month];
+      recordsByMonth.set(String(month.id), []);
+      return { data: clone(month), status: 201 };
+    }
+
     if (path === "/months/copy") {
       const allMonths = await ensureMonths();
       const sourceMonth = allMonths.find((month) => month.id === Number(payload.source_reference_id));

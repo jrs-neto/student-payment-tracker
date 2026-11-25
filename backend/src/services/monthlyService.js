@@ -69,6 +69,23 @@ function getCurrentDateInSaoPaulo() {
   }).format(new Date());
 }
 
+function getCurrentReferenceMonth() {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(new Date());
+
+  const year = Number(parts.find((part) => part.type === "year")?.value);
+  const month = Number(parts.find((part) => part.type === "month")?.value);
+
+  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+    throw new Error("Não foi possível determinar o mês de referência atual.");
+  }
+
+  return { year, month };
+}
+
 function formatCivilDate(value) {
   if (!value) return null;
 
@@ -112,11 +129,45 @@ function validateRecordId(recordId) {
 }
 
 export const monthlyService = {
-  // Listar meses do usuário.
-  async listMonths(userId) {
+  // Listar meses do usuário (assegura mês atual para contas não-demo).
+  async listMonths(userId, options = {}) {
     validateUserId(userId);
 
+    if (!options.isDemo) {
+      const { year, month } = getCurrentReferenceMonth();
+      await monthlyModel.ensureMonthExists(year, month, userId);
+    }
+
     return monthlyModel.findAllMonths(userId);
+  },
+
+  // Criar mês de referência avulso (competência vazia).
+  async createMonth(body, userId) {
+    validateUserId(userId);
+
+    validateAllowedKeys(body, ["year", "month"]);
+
+    const { year, month } = body;
+
+    if (typeof year !== "number" || !Number.isInteger(year) || year < 2000 || year > 2100) {
+      throw createError("O campo year deve ser um ano válido entre 2000 e 2100.", 400);
+    }
+
+    if (typeof month !== "number" || !Number.isInteger(month) || month < 1 || month > 12) {
+      throw createError("O campo month deve ser um mês válido entre 1 e 12.", 400);
+    }
+
+    try {
+      const createdMonth = await monthlyModel.createMonth({ year, month }, userId);
+
+      return createdMonth;
+    } catch (dbError) {
+      if (dbError.code === "23505" && (!dbError.constraint || dbError.constraint === "uk_user_year_month")) {
+        throw createError("Este mês de referência já existe.", 409);
+      }
+
+      throw dbError;
+    }
   },
 
   // Buscar mensalidades e resumo financeiro de um mês.

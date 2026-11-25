@@ -4,6 +4,7 @@ import {
   Plus,
   Copy,
   Calendar,
+  CalendarPlus,
   DollarSign,
   CheckCircle2,
   Clock,
@@ -81,13 +82,15 @@ export default function MensalidadesPage({ demoMode = false }) {
   const [isUpdatingRecord, setIsUpdatingRecord] = useState(false);
   const [editFormError, setEditFormError] = useState(null);
 
-  // Estados para o modal de cópia de meses ("Criar próximo mês")
-  const [showCopyModal, setShowCopyModal] = useState(false);
+  // Estados para o modal unificado de criação de competência
+  const [showNewMonthModal, setShowNewMonthModal] = useState(false);
+  const [creationMode, setCreationMode] = useState('empty'); // 'empty' | 'copy'
+  const [newMonthTarget, setNewMonthTarget] = useState({ year: '', month: '' });
+  const [isCreatingMonth, setIsCreatingMonth] = useState(false);
+  const [newMonthError, setNewMonthError] = useState(null);
+  // Estados para o sub-fluxo de cópia dentro do modal unificado
   const [copySourceId, setCopySourceId] = useState('');
-  const [copyTargetMonth, setCopyTargetMonth] = useState('');
-  const [copyTargetYear, setCopyTargetYear] = useState('');
   const [isCopying, setIsCopying] = useState(false);
-  const [copyError, setCopyError] = useState(null);
 
   // Estados para exclusão do mês de referência
   const [isDeleteMonthModalOpen, setIsDeleteMonthModalOpen] = useState(false);
@@ -422,72 +425,140 @@ export default function MensalidadesPage({ demoMode = false }) {
     }
   }
 
-  async function handleCopyMonth() {
-    setCopyError(null);
+  const openNewMonthModal = () => {
+    setCreationMode('empty');
 
-    if (!copySourceId) {
-      setCopyError('Selecione o mês de origem.');
+    const reference = selectedMonth
+      ? new Date(Number(selectedMonth.year), Number(selectedMonth.month), 1)
+      : new Date(
+        new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' })
+      );
+
+    setNewMonthTarget({
+      year: String(reference.getFullYear()),
+      month: String(reference.getMonth() + 1),
+    });
+
+    setNewMonthError('');
+    setShowNewMonthModal(true);
+  };
+
+  function closeNewMonthModal() {
+    setShowNewMonthModal(false);
+    setNewMonthError(null);
+  }
+
+  async function handleCreateMonth() {
+    setNewMonthError(null);
+
+    const tMonth = Number(newMonthTarget.month);
+    const tYear = Number(newMonthTarget.year);
+
+    if (!newMonthTarget.month || !newMonthTarget.year) {
+      setNewMonthError('Informe o mês e o ano de destino.');
       return;
     }
 
-    if (!copyTargetMonth || !copyTargetYear) {
-      setCopyError('Informe o mês e o ano de destino.');
+    if (!Number.isInteger(tMonth) || tMonth < 1 || tMonth > 12) {
+      setNewMonthError('Mês inválido.');
       return;
     }
 
-    const tMonth = Number(copyTargetMonth);
-    const tYear = Number(copyTargetYear);
-
-    const monthExists = months.some(
-      (m) => Number(m.month) === tMonth && Number(m.year) === tYear
-    );
-
-    if (monthExists) {
-      setCopyError('Já existe um mês de referência cadastrado para este período.');
+    if (!Number.isInteger(tYear) || tYear < 2000 || tYear > 2100) {
+      setNewMonthError('Ano inválido. Deve ser entre 2000 e 2100.');
       return;
     }
 
-    const payload = {
-      source_reference_id: Number(copySourceId),
-      target_year: tYear,
-      target_month: tMonth,
-    };
-
-    setIsCopying(true);
-
-    try {
-      const response = await dataApi.post('/months/copy', payload);
-      const newMonth = response.data?.target_reference_month;
-
-      const monthsResponse = await dataApi.get('/months');
-      const updatedMonths = Array.isArray(monthsResponse.data) ? monthsResponse.data : [];
-      setMonths(updatedMonths);
-
-      setShowCopyModal(false);
-      setCopySourceId('');
-      setCopyTargetMonth('');
-      setCopyTargetYear('');
-
-      const targetCreatedMonth = updatedMonths.find(
-        (m) => Number(m.month) === tMonth && Number(m.year) === tYear
-      ) || newMonth;
-
-      if (targetCreatedMonth && targetCreatedMonth.id) {
-        setSelectedMonth(targetCreatedMonth);
-        selectedMonthIdRef.current = targetCreatedMonth.id;
-        setExpandedYear(String(targetCreatedMonth.year));
+    if (creationMode === 'copy') {
+      // --- Fluxo de cópia ---
+      if (!copySourceId) {
+        setNewMonthError('Selecione o mês de origem.');
+        return;
       }
 
-      setActionMessage('Mês de referência criado e mensalidades copiadas com sucesso.');
-      setTimeout(() => {
-        setActionMessage(null);
-      }, 4000);
-    } catch (err) {
-      console.error('Erro ao copiar mês:', err);
-      const errorMessage = err.response?.data?.error?.message || err.response?.data?.message;
-      setCopyError(errorMessage || 'Não foi possível copiar o mês. Verifique os dados e tente novamente.');
-    } finally {
-      setIsCopying(false);
+      const monthExists = months.some(
+        (m) => Number(m.month) === tMonth && Number(m.year) === tYear
+      );
+      if (monthExists) {
+        setNewMonthError('Já existe um mês de referência cadastrado para este período.');
+        return;
+      }
+
+      const payload = {
+        source_reference_id: Number(copySourceId),
+        target_year: tYear,
+        target_month: tMonth,
+      };
+
+      setIsCopying(true);
+      try {
+        const response = await dataApi.post('/months/copy', payload);
+        const newMonth = response.data?.target_reference_month;
+
+        const monthsResponse = await dataApi.get('/months');
+        const updatedMonths = Array.isArray(monthsResponse.data) ? monthsResponse.data : [];
+        setMonths(updatedMonths);
+
+        closeNewMonthModal();
+
+        const targetCreatedMonth = updatedMonths.find(
+          (m) => Number(m.month) === tMonth && Number(m.year) === tYear
+        ) || newMonth;
+
+        if (targetCreatedMonth && targetCreatedMonth.id) {
+          setSelectedMonth(targetCreatedMonth);
+          selectedMonthIdRef.current = targetCreatedMonth.id;
+          setExpandedYear(String(targetCreatedMonth.year));
+        }
+
+        setActionMessage('Mês de referência criado e mensalidades copiadas com sucesso.');
+        setTimeout(() => { setActionMessage(null); }, 4000);
+      } catch (err) {
+        console.error('Erro ao copiar mês:', err);
+        const errorMessage = err.response?.data?.error?.message || err.response?.data?.message;
+        setNewMonthError(errorMessage || 'Não foi possível copiar o mês. Verifique os dados e tente novamente.');
+      } finally {
+        setIsCopying(false);
+      }
+    } else {
+      // --- Fluxo de mês em branco ---
+      setIsCreatingMonth(true);
+      try {
+        const response = await dataApi.post('/months', { year: tYear, month: tMonth });
+        const created = response.data;
+
+        const monthsResponse = await dataApi.get('/months');
+        const updatedMonths = Array.isArray(monthsResponse.data) ? monthsResponse.data : [];
+        setMonths(updatedMonths);
+
+        closeNewMonthModal();
+
+        const targetMonth = updatedMonths.find(
+          (m) => Number(m.month) === tMonth && Number(m.year) === tYear
+        ) || created;
+
+        if (targetMonth && targetMonth.id) {
+          setSelectedMonth(targetMonth);
+          selectedMonthIdRef.current = targetMonth.id;
+          setExpandedYear(String(targetMonth.year));
+        }
+
+        setActionMessage(`Competência de ${nomesMeses[tMonth]} de ${tYear} criada com sucesso.`);
+        setTimeout(() => { setActionMessage(null); }, 4000);
+      } catch (err) {
+        console.error('Erro ao criar competência:', err);
+        const status = err.response?.status;
+        const errorMessage = err.response?.data?.error?.message || err.response?.data?.message;
+        if (status === 409) {
+          setNewMonthError('Este mês de referência já existe.');
+        } else if (status === 400) {
+          setNewMonthError(errorMessage || 'Mês ou ano inválido.');
+        } else {
+          setNewMonthError(errorMessage || 'Não foi possível criar o mês de referência. Tente novamente.');
+        }
+      } finally {
+        setIsCreatingMonth(false);
+      }
     }
   }
 
@@ -683,86 +754,127 @@ export default function MensalidadesPage({ demoMode = false }) {
     <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-main)] p-6 transition-colors duration-200">
       <div className="max-w-[1500px] mx-auto">
 
-        {/* Modal / Bloco de Cópia de Mês */}
-        {showCopyModal && (
-          <div className="mb-8 p-5 bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-lg shadow-md max-w-3xl mx-auto relative z-10">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
-              <Copy size={18} className="text-blue-600 dark:text-[#8B5CF6]" />
-              Criar Próximo Mês (Copiar Registros)
-            </h3>
+        {/* Modal Unificado de Nova Competência */}
+        {showNewMonthModal && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+            <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-lg max-w-lg w-full p-6 shadow-xl">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                <CalendarPlus size={18} className="text-blue-600 dark:text-[#8B5CF6]" />
+                Nova Competência
+              </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Mês de Origem</label>
-                <select
-                  value={copySourceId}
-                  onChange={(e) => setCopySourceId(e.target.value)}
-                  className="w-full bg-[var(--bg-main)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6]"
+              {/* Tabs de modo */}
+              <div className="flex gap-1 p-1 bg-gray-100 dark:bg-[#1e1530] rounded-lg mb-5">
+                <button
+                  type="button"
+                  onClick={() => { setCreationMode('empty'); setNewMonthError(null); }}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-semibold transition ${creationMode === 'empty'
+                      ? 'bg-white dark:bg-[#2d1f4e] text-blue-700 dark:text-[#8B5CF6] shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                    }`}
                 >
-                  <option value="">Selecione a origem...</option>
-                  {months.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {nomesMeses[m.month]} de {m.year}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Mês de Destino</label>
-                <select
-                  value={copyTargetMonth}
-                  onChange={(e) => setCopyTargetMonth(e.target.value)}
-                  className="w-full bg-[var(--bg-main)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6]"
+                  <CalendarPlus size={15} />
+                  Mês em branco
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setCreationMode('copy'); setNewMonthError(null); }}
+                  disabled={months.length === 0}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed ${creationMode === 'copy'
+                      ? 'bg-white dark:bg-[#2d1f4e] text-blue-700 dark:text-[#8B5CF6] shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                    }`}
                 >
-                  <option value="">Selecione o mês...</option>
-                  {Object.entries(nomesMeses).map(([num, name]) => (
-                    <option key={num} value={num}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
+                  <Copy size={15} />
+                  Replicar competência
+                </button>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Ano de Destino</label>
-                <input
-                  type="number"
-                  placeholder="Ex: 2026"
-                  value={copyTargetYear}
-                  onChange={(e) => setCopyTargetYear(e.target.value)}
-                  className="w-full bg-[var(--bg-main)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6]"
-                />
+              {/* Campos comuns: mês de destino + ano de destino */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {creationMode === 'copy' ? 'Mês de destino' : 'Mês'}
+                  </label>
+                  <select
+                    value={newMonthTarget.month}
+                    onChange={(e) => setNewMonthTarget((prev) => ({ ...prev, month: e.target.value }))}
+                    className="w-full bg-[var(--bg-main)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6]"
+                  >
+                    <option value="">Selecione o mês...</option>
+                    {Object.entries(nomesMeses).map(([num, name]) => (
+                      <option key={num} value={num}>{name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {creationMode === 'copy' ? 'Ano de destino' : 'Ano'}
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Ex: 2026"
+                    value={newMonthTarget.year}
+                    onChange={(e) => setNewMonthTarget((prev) => ({ ...prev, year: e.target.value }))}
+                    className="w-full bg-[var(--bg-main)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6]"
+                  />
+                </div>
               </div>
-            </div>
 
-            {copyError && (
-              <div className="bg-red-100 dark:bg-red-950/60 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 px-3 py-2 rounded-lg mb-4 text-xs flex items-center gap-2" role="alert">
-                <AlertCircle size={14} />
-                <span>{copyError}</span>
+              {/* Campo exclusivo do modo cópia: origem */}
+              {creationMode === 'copy' && (
+                <div className="mb-4">
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Mês de origem</label>
+                  <select
+                    value={copySourceId}
+                    onChange={(e) => setCopySourceId(e.target.value)}
+                    className="w-full bg-[var(--bg-main)] text-[var(--text-main)] border border-[var(--border-color)] rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-[#8B5CF6]"
+                  >
+                    <option value="">Selecione a origem...</option>
+                    {[...months]
+                      .sort((a, b) => Number(b.year) !== Number(a.year) ? Number(b.year) - Number(a.year) : Number(b.month) - Number(a.month))
+                      .map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {nomesMeses[m.month]} de {m.year}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Nota informativa para mês em branco */}
+              {creationMode === 'empty' && months.length === 0 && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-4 italic">
+                  Nenhuma competência existe ainda. Crie a primeira abaixo.
+                </p>
+              )}
+
+              {/* Erro */}
+              {newMonthError && (
+                <div className="bg-red-100 dark:bg-red-950/60 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 px-3 py-2 rounded-lg mb-4 text-xs flex items-center gap-2" role="alert">
+                  <AlertCircle size={14} />
+                  <span>{newMonthError}</span>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeNewMonthModal}
+                  disabled={isCreatingMonth || isCopying}
+                  className="px-4 py-2 bg-gray-200 cursor-pointer dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateMonth}
+                  disabled={isCreatingMonth || isCopying}
+                  className={`px-4 py-2 cursor-pointer bg-blue-600 hover:bg-blue-700 dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED] text-white text-sm font-semibold rounded-lg transition shadow-sm ${(isCreatingMonth || isCopying) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {(isCreatingMonth || isCopying) ? 'A criar...' : 'Criar Mês'}
+                </button>
               </div>
-            )}
-
-            <div className="flex justify-end space-x-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowCopyModal(false);
-                  setCopyError(null);
-                }}
-                disabled={isCopying}
-                className="px-4 py-2 bg-gray-200 cursor-pointer dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg transition"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleCopyMonth}
-                disabled={isCopying}
-                className={`px-4 py-2 bg-emerald-600 cursor-pointer hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition ${isCopying ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {isCopying ? 'A criar...' : 'Confirmar Cópia'}
-              </button>
             </div>
           </div>
         )}
@@ -781,7 +893,14 @@ export default function MensalidadesPage({ demoMode = false }) {
 
         {!loadingMonths && !errorMonths && months.length === 0 && (
           <div className="bg-[var(--bg-surface)] border border-[var(--border-color)] rounded-lg shadow-md p-8 text-center">
-            <p className="text-gray-500 dark:text-gray-400">Nenhum mês de referência cadastrado no momento.</p>
+            <p className="text-gray-500 dark:text-gray-400 mb-4">Nenhum mês de referência cadastrado no momento.</p>
+            <button
+              onClick={openNewMonthModal}
+              className="inline-flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED] text-white text-sm font-semibold px-4 py-2 rounded-lg transition shadow-sm"
+            >
+              <CalendarPlus size={16} />
+              Criar primeiro mês de referência
+            </button>
           </div>
         )}
 
@@ -841,8 +960,8 @@ export default function MensalidadesPage({ demoMode = false }) {
                                 type="button"
                                 onClick={() => handleSelectMonth(month)}
                                 className={`w-full text-left px-3 py-2.5 rounded-md transition flex items-center justify-between cursor-pointer ${isSelected
-                                    ? 'bg-blue-600 dark:bg-[#8B5CF6] text-white font-semibold shadow-sm'
-                                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1e1530]'
+                                  ? 'bg-blue-600 dark:bg-[#8B5CF6] text-white font-semibold shadow-sm'
+                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1e1530]'
                                   }`}
                               >
                                 <span className="text-sm">{nomesMeses[month.month] || `Mês ${month.month}`}</span>
@@ -876,15 +995,11 @@ export default function MensalidadesPage({ demoMode = false }) {
                 </div>
                 <div className="md:absolute md:right-0">
                   <button
-                    onClick={() => {
-                      setShowCopyModal(true);
-                      setCopyError(null);
-                      if (selectedMonth) setCopySourceId(String(selectedMonth.id));
-                    }}
+                    onClick={openNewMonthModal}
                     className="flex items-center gap-2 cursor-pointer bg-blue-600 hover:bg-blue-700 dark:bg-[#8B5CF6] dark:hover:bg-[#7C3AED] text-white text-sm font-semibold px-4 py-2 rounded-lg transition shadow-sm w-full md:w-auto justify-center"
                   >
-                    <Copy size={16} />
-                    Criar próximo mês
+                    <CalendarPlus size={16} />
+                    Nova Competência
                   </button>
                 </div>
               </header>
@@ -1223,8 +1338,8 @@ export default function MensalidadesPage({ demoMode = false }) {
                                       onClick={() => handleTogglePayment(record)}
                                       disabled={isAnyUpdating}
                                       className={`inline-flex items-center justify-center gap-1 cursor-pointer px-3 py-1.5 rounded-md text-xs font-semibold transition w-44 ${isPaid
-                                          ? 'bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 border border-yellow-200 dark:border-yellow-800'
-                                          : 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/50 border border-green-200 dark:border-green-800'
+                                        ? 'bg-yellow-50 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 border border-yellow-200 dark:border-yellow-800'
+                                        : 'bg-green-50 dark:bg-green-950/50 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/50 border border-green-200 dark:border-green-800'
                                         } ${isAnyUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                       {isPaymentUpdating ? (

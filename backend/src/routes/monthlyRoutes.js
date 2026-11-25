@@ -11,6 +11,7 @@ router.use(authMiddleware);
 
 // Rotas de meses de referência e cópia.
 router.get("/months", monthlyController.listMonths);
+router.post("/months", readOnlyDemoMiddleware, monthlyController.createMonth);
 router.post("/months/copy", readOnlyDemoMiddleware, monthlyController.copyMonthRecords);
 router.delete("/months/:id", readOnlyDemoMiddleware, monthlyController.deleteMonth);
 router.get("/months/:reference_id/records", monthlyController.getMonthRecords);
